@@ -41,10 +41,35 @@ if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_
 print('Creating image stack...')
 stack = image_stack(img_dir + tmp_cropped) #setup an image stack
 
-#Display images
-#for position in range(0, stack.depth):
-#	plt.imshow(stack.image[position], cmap = cm.Greys_r)
-#	plt.show()
+#Plot the image
+ax = plt.gca()
+fig = plt.gcf()
+implot = ax.imshow(stack.image[0], cmap =cm.Greys_r)
+
+#plot the focus graph
+fig2 = plt.figure()
+ax2 = fig2.add_subplot(111)
+ax2.set_ylim([-20,20])
+line1, = ax2.plot(np.zeros(stack.depth))
+
+
+#This function draws a graph of the focus through the stack
+#It updates when the user clicks the mouse on a pixel
+def onclick(event):
+    	if event.xdata != None and event.ydata != None:
+	    	print(event.xdata, event.ydata)
+	    	y = int(event.xdata)
+	    	x = int(event.ydata)
+	    	data = stack.get_focus_data(y, x)
+	    	print(data)
+	    	line1.set_ydata(data)
+    		fig2.canvas.draw()
+
+try:
+	cid = fig.canvas.mpl_connect('button_press_event', onclick)
+	plt.show() 
+except KeyboardInterrupt:
+	raise
 
 #Generate Depth map, need to add time calculation 
 start = time.time()

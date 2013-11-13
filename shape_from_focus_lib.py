@@ -44,6 +44,11 @@ class image_stack:
 		#copy image to array
 		self.image[self.current_depth] = img
 		self.current_depth += 1
+	
+	def get_focus_data(self, y, x):
+		return self.image[:, x, y].tolist()
+		
+
 		
 #Function for determining the focus maximum of a pixel
 def detect_focus_peak(stack, y, x):
