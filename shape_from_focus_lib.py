@@ -1,6 +1,8 @@
 #Import various libaries
 import cv2
 import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib import cm
 import sort
 import shutil
 import os
@@ -39,7 +41,14 @@ class image_stack:
 		img = img.astype(dtype=np.float64)
 
 		#find the focus using laplacian operator, this needs to be improved
-		img = cv2.Laplacian(img, -1, ksize = 1)
+		sobelx = cv2.Sobel(img, ddepth=cv2.CV_64F, dx=1, dy=0, ksize=3)
+		sobely = cv2.Sobel(img, ddepth=cv2.CV_64F, dx=0, dy=1, ksize=3)
+		
+		img = sobelx * 0.5 + sobely * 0.5
+		img = abs(img)
+		
+		#plt.imshow(img)
+		#plt.show()
 		
 		#copy image to array
 		self.image[self.current_depth] = img

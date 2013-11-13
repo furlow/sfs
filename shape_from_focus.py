@@ -49,7 +49,7 @@ implot = ax.imshow(stack.image[0], cmap =cm.Greys_r)
 #plot the focus graph
 fig2 = plt.figure()
 ax2 = fig2.add_subplot(111)
-ax2.set_ylim([-20,20])
+ax2.set_ylim([-100,100])
 line1, = ax2.plot(np.zeros(stack.depth))
 
 
