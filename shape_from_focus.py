@@ -7,27 +7,34 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 import os
 import time
+import thread
 import sort
+import sys
+import shutil
 import subprocess
+from depth_map_methods import *
+
+#Parse the input arguments
+#Add this latter
 
 #main section
-print('Creating temporary directories...')
-img_dir = 'images/book/'
+img_dir = 'images/speakergrill/'
 tmp_copy = 'tmp_copy/'
 tmp_cropped = 'tmp_cropped/'
 output = 'output/'
-image_files = os.listdir(img_dir)
-print(image_files)
-sort.sort_nicely(image_files)
-print(image_files)
 
-#Check if the folders have been created and images cropped
+#Check if the folders have been created and images cropped #Need to improve this
 if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_cropped) and  not os.path.exists(img_dir + output) ):
+
+	image_files = os.listdir(img_dir)
+	sort.sort_nicely(image_files)
+
+	print('Creating temporary directories...')
 	os.mkdir(img_dir + tmp_copy)
 	os.mkdir(img_dir + tmp_cropped)
 	os.mkdir(img_dir + output)
 	
-	align_image_stack_cmd = ["align_image_stack", "-v", "-m", "-C", "-a", img_dir + tmp_cropped,]
+	align_image_stack_cmd = ["align_image_stack", "-m", "-C", "-c", "4", "-a", img_dir + tmp_cropped,]
 	
 	for file in image_files:
 		shutil.copyfile(img_dir + file, img_dir + tmp_copy + file)
@@ -39,19 +46,29 @@ if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_
 
 #Create a new image stack
 print('Creating image stack...')
-stack = image_stack(img_dir + tmp_cropped) #setup an image stack
+stack = image_stack(img_dir + tmp_cropped, cv2.CV_32F, np.float32) 
+
+#Generate Depth map
+start = time.time()
+print('Generating Depth map...')
+create_depth_map(stack)
+finish = time.time()
+print 'Execution time =',finish-start
+
+#write image out
+cv2.imwrite( img_dir + output + 'out.jpg', stack.depth_map)
 
 #Plot the image
 ax = plt.gca()
 fig = plt.gcf()
-implot = ax.imshow(stack.image[0], cmap =cm.Greys_r)
+implot = ax.imshow(stack.depth_map, cmap = cm.Greys_r)
 
 #plot the focus graph
 fig2 = plt.figure()
 ax2 = fig2.add_subplot(111)
-ax2.set_ylim([-100,100])
+ax2.set_ylim([0,1e8])
+ax2.set_xlim([0,stack.depth - 1])
 line1, = ax2.plot(np.zeros(stack.depth))
-
 
 #This function draws a graph of the focus through the stack
 #It updates when the user clicks the mouse on a pixel
@@ -70,13 +87,3 @@ try:
 	plt.show() 
 except KeyboardInterrupt:
 	raise
-
-#Generate Depth map, need to add time calculation 
-start = time.time()
-print('Generating Depth map...')
-create_depth_map(stack)
-finish = time.time()
-
-print 'Execution time =',finish-start
-
-cv2.imwrite( img_dir + output + 'out.jpg', stack.depth_map)
