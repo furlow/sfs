@@ -18,7 +18,7 @@ from depth_map_methods import *
 #Add this latter
 
 #main section
-img_dir = 'images/speakergrill/'
+img_dir = sys.argv[1]
 tmp_copy = 'tmp_copy/'
 tmp_cropped = 'tmp_cropped/'
 output = 'output/'
@@ -66,7 +66,7 @@ implot = ax.imshow(stack.depth_map, cmap = cm.Greys_r)
 #plot the focus graph
 fig2 = plt.figure()
 ax2 = fig2.add_subplot(111)
-ax2.set_ylim([0,1e8])
+ax2.set_ylim([0,1e9])
 ax2.set_xlim([0,stack.depth - 1])
 line1, = ax2.plot(np.zeros(stack.depth))
 
