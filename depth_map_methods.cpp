@@ -1,25 +1,3 @@
-//
-//  depth_map_methods.h
-//
-//
-//  Created by Josh on 10/02/2014.
-//
-//
-#ifndef ____depth_map_methods__
-#define ____depth_map_methods__
-
-#include <iostream>
-
-#endif /* defined(____depth_map_methods__) */
-
-//
-//  depth_map_methods.cpp
-//
-//
-//  Created by Josh on 10/02/2014.
-//
-//
-
 #include "depth_map_methods.h"
 
 //image stack constructor
