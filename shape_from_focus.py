@@ -46,7 +46,7 @@ if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_
 
 #Create a new image stack
 print('Creating image stack...')
-stack = image_stack(img_dir + tmp_cropped, cv2.CV_32F, np.float32) 
+stack = image_stack(img_dir + tmp_cropped, cv2.CV_32F, np.float32)
 
 #Generate Depth map
 start = time.time()

@@ -20,10 +20,12 @@
 //
 //
 
-#include "depth_map_methods.h"
+#include depth_map_methods.h
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
 
 //image stack constructor
-image_stack::image_stack(int height, int width)
+image_stack::image_stack(int height, int width);
 {
     depth_map = Mat(height, width, CV_32F);
 }
@@ -45,7 +47,7 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
     int max_focus_depth = 0;
     float max_focus = 0;
     
-    for(int depth = 0; depth < stack.size(); depth++)
+    for(int depth = 0; z < stack.size(); depth++)
     {
         if(stack[depth].at<float>(y,x) > max_focus)
         {
@@ -69,7 +71,7 @@ void image_stack::create_depth_map()
         }
     }
     
-    stretch_factor = 255 / stack.size() - 1;
+    stretch_factor = 255 / self.depth - 1;
     
 }
 
@@ -77,18 +79,17 @@ void image_stack::create_depth_map()
  */
 Mat sum_modified_laplacian::operator()(Mat& image){
     
-    Mat ML(image.rows, image.cols, CV_32F);
-    Mat SML(image.rows, image.cols, CV_32F);
+    Mat ML(height, width, CV_32F);
+    Mat SML(height, width, CV_32F);
     
-    for(int x = step; x < image.cols - step; x++)
+    for(int x = step; x < width - step; x++)
     {
-        for(int y = step; y < image.rows - step; y++)
+        for(int y = step; y < height - step; y++)
         {
-            ML.at<float>(y, x) = abs( 2 * image.at<float>(y, x) - image.at<float>(y, x - step) - image.at<float>(y, x + step))
+            ML.at<float>(y, x) = abs( 2 * image.at<float>(y, x) - image.at<float>(y, x - step) - image.at<float>(y, x + step)
                                 +
-                                 abs( 2 * image.at<float>(y, x) - image.at<float>(y - step , x) - image.at<float>(y + step, x));
+                                 abs( 2 * image.at<float>(y, x) - image.at<float>(y - step , x) - image.at<float>(y + step, x);
         }
     }
     boxFilter(ML, SML, -1, Size(2*step+1,2*step+1), Point(-1,-1), false);
-    return SML;
 }

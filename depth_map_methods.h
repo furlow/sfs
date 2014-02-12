@@ -38,7 +38,7 @@ public:
     void add(char* image_path);
     
     //Function for determining the focus maximum of a pixel
-    inline float coarse_depth_esstimation(int x, int y);
+    inline float coarse_depth_esstimation(int y, int x);
     
     //Function for generating a depth map from a focus stack processed with a focus measure
     void create_depth_map();
