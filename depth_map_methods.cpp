@@ -49,6 +49,8 @@ void image_stack::create_depth_map()
     
     stretch_factor = 255 / stack.size() - 1;
     
+    imshow("Depth Map", depth_map);
+    
 }
 
 /* Sum Modified Laplacian focus measure
