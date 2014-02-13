@@ -3,7 +3,7 @@
 
 //image stack constructor
 image_stack::image_stack(int height, int width, int size):
-height(height), width(width), size(size), SML(4)
+height(height), width(width), size(size), SML(9)
 {
     depth_map = Mat(height, width, CV_32F);
     img_32f = Mat(height, width, CV_32F);
@@ -39,7 +39,7 @@ void image_stack::add(char* image_path)
     
     init=clock();
     
-    stack.push_back(SML(img_32f));
+    stack.push_back(SML(img_32f).clone());
     
     final=clock()-init;
     cout << "Run SML and push into the stack " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
@@ -69,6 +69,9 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
 //Function for generating a depth map from a focus stack processed with a focus measure
 void image_stack::create_depth_map()
 {
+    clock_t init, final;
+
+    init=clock();
     
     cout << "Stack size " << stack.size() << endl;
     
@@ -82,12 +85,16 @@ void image_stack::create_depth_map()
         }
     }
     
-    //Mat img;
-    //convertScaleAbs(depth_map,img);
-    //namedWindow( "Depth Map", WINDOW_OPENGL );
-    //imshow("Depth Map", img);
+    final=clock()-init;
+    cout << "Generate depth map " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
-    //waitKey(0);
+    Mat dst;
+    convertScaleAbs(depth_map,dst, 255 / stack.size());
+    resize(dst, dst, Size(), 0.2, 0.2);
+    namedWindow( "Depth Map", WINDOW_AUTOSIZE );
+    imshow("Depth Map", dst);
+    
+    waitKey(0);
 }
 
 /* Sum Modified Laplacian focus measure
