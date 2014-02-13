@@ -57,7 +57,7 @@ private:
     int size;
     vector<Mat> stack;
     Mat depth_map;
-    Mat img_32f;
-    Mat img;
+    //Mat img_32f;
+    //Mat img;
     sum_modified_laplacian SML;
 };
