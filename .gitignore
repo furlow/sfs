@@ -38,3 +38,8 @@ nosetests.xml
 #directories
 images/
 image2/
+laplacian comparrison/
+other images/
+photo_shoot/
+stack/
+
