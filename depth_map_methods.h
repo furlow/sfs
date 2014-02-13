@@ -10,7 +10,7 @@ using namespace cv;
 class image_stack{
 public:
     //Constructor
-    image_stack(int height, int width);
+    image_stack(int height, int width, int size);
     
     //This function is used to add an image to the stack
     void add(char* image_path);
@@ -24,7 +24,7 @@ public:
 private:
     int height;
     int width;
-    int stretch_factor;
+    int size;
     vector<Mat> stack;
     Mat depth_map;
 };

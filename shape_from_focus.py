@@ -50,12 +50,16 @@ img = cv2.imread(img_dir + tmp_cropped + image_files[0], 0)
 height, width = img.shape
 
 #Create a new image stack
-print('Creating image stack...')
-stack = Pyimage_stack(height, width)
+print('Creating image stack with dimensions', height, width)
+stack = Pyimage_stack(height, width, len(image_files))
 
 #Add image files
+start = time.time()
 for image_file in image_files:
+    print "Adding " + image_file
     stack.add(img_dir + tmp_cropped + image_file)
+finish = time.time()
+print 'Execution time =',finish-start
 
 #Generate Depth map
 start = time.time()
