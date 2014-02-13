@@ -13,17 +13,7 @@ class image_stack:
 	#Initalization function
 	def __init__(self, img_dir, CV_DTYPE, NP_DTYPE):
 	
-		self.CV_DTYPE = CV_DTYPE
-		self.NP_DTYPE = NP_DTYPE
-	
-		#Move this into a function which also checks if all the files have the same dimension sizes
-		image_files = os.listdir(img_dir)
-		sort.sort_nicely(image_files)
 		
-		#Get image size of first file and assume as dimensions of all files
-		img = cv2.imread(img_dir + image_files.pop(0), 0)
-		self.height, self.width = img.shape
-
 		self.depth = len(image_files)
 		self.stretch_factor = 255 / self.depth - 1
 		
