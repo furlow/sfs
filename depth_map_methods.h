@@ -21,10 +21,19 @@ public:
  */
 class sum_modified_laplacian: public focus_measure{
 public:
-    sum_modified_laplacian(int step):step(step){}
+    sum_modified_laplacian(int height, int width, int step):step(step), height(height), width(width){
+    
+        ML = Mat(height, width, CV_32F);
+        SML = Mat(height, width, CV_32F);
+    
+    }
     Mat operator()(Mat& image);
 private:
     int step;
+    int height;
+    int width;
+    Mat ML;
+    Mat SML;
 };
 
 //This is the image stack class
