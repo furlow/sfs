@@ -63,7 +63,12 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
             max_focus = *img_ptr;
         }
     }
-    return max_focus_depth;
+    
+    if(max_focus > 1800){
+        return stack.size() - max_focus_depth;
+    } else{
+        return 0;
+    }
 }
 
 //Function for generating a depth map from a focus stack processed with a focus measure
