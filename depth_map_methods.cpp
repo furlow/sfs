@@ -2,10 +2,13 @@
 #include <time.h>
 
 //image stack constructor
-image_stack::image_stack(int height, int width, int size):height(height), width(width), size(size)
+image_stack::image_stack(int height, int width, int size):
+height(height), width(width), size(size), SML(4)
 {
     depth_map = Mat(height, width, CV_32F);
-    
+    img_32f = Mat(height, width, CV_32F);
+    img = Mat(height, width, CV_8U);
+
     //stack.resize(size);
     
     cout << "The size is " << size << endl;
@@ -16,18 +19,13 @@ image_stack::image_stack(int height, int width, int size):height(height), width(
 void image_stack::add(char* image_path)
 {
     
+    cout << image_path << endl;
+    
     clock_t init, final;
     
     init=clock();
-    
-    Mat img_32f(height, width, CV_32F);
-    
-    final=clock()-init;
-    cout << "Create Mat " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-    
-    init=clock();
 
-    Mat img = imread(image_path, 0);
+    img = imread(image_path, 0);
     
     final=clock()-init;
     cout << "Read image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
@@ -40,25 +38,11 @@ void image_stack::add(char* image_path)
     cout << "Convert image to float " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
     init=clock();
-
-    sum_modified_laplacian SML(9);
+    
+    stack.push_back(SML(img_32f));
     
     final=clock()-init;
-    cout << "Create Sum modfied laplacian " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-    
-    init=clock();
-    
-    img_32f = SML(img_32f);
-    
-    final=clock()-init;
-    cout << "Run sum modified laplacian " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-    
-    init=clock();
-    
-    stack.push_back(img_32f);
-    
-    final=clock()-init;
-    cout << "Push into the stack " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    cout << "Run SML and push into the stack " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
     cout << "Currently allocated stack vector capacity = " << stack.capacity() << endl;
 }
@@ -113,22 +97,24 @@ Mat sum_modified_laplacian::operator()(Mat& image){
     Mat ML(image.rows, image.cols, CV_32F);
     Mat SML(image.rows, image.cols, CV_32F);
     
-    float* img_ptr = (float*)(image.data);
-    float* ML_ptr = (float*)(ML.data);
-    
     clock_t init, final;
     
     init=clock();
 
     for(int y = step; y < image.rows - step; y++)
     {
+        float* ML_ptr = ML.ptr<float>(y);
+        float* img_ptr = image.ptr<float>(y);
+        float* img_ptr_step_minus = image.ptr<float>(y - step);
+        float* img_ptr_step_plus = image.ptr<float>(y + step);
+
         for(int x = step; x < image.cols - step; x++)
         {
-            ML_ptr[y*image.cols + x]
+            ML_ptr[x]
             =
-            abs( 2 * img_ptr[y*image.cols + x] - img_ptr[y*image.cols + x - step] - img_ptr[y*image.cols + x + step])
+            abs( 2 * img_ptr[x] - img_ptr[x - step] - img_ptr[x + step])
             +
-            abs( 2 * img_ptr[y*image.cols + x] - img_ptr[(y - step)*image.cols + x] - img_ptr[(y + step)*image.cols + x]);
+            abs( 2 * img_ptr[x] - img_ptr_step_minus[x] - img_ptr_step_plus[x]);
         }
     }
     
