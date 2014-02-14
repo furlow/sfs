@@ -43,12 +43,9 @@ if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_
 	print('Aligning images...')
 	subprocess.call(align_image_stack_cmd)
 
+
 image_files = [image_file for image_file in os.listdir(img_dir + tmp_copy) if image_file.endswith('.JPG')]
-
 sort.sort_nicely(image_files)
-
-print image_files
-
 img = cv2.imread(img_dir + tmp_copy + image_files[0], 0)
 height, width = img.shape
 
