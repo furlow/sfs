@@ -13,7 +13,7 @@ setup(
                               include_dirs=[".","/usr/local/include/opencv2", "/usr/local/include"],
                               language="c++",
                               library_dirs=['/usr/local/lib'],
-                              libraries=['opencv_core', 'opencv_highgui', 'opencv_imgproc'])
+                              libraries=['opencv_core', 'opencv_highgui'])
                              ],
       cmdclass = {'build_ext': build_ext},
 )
