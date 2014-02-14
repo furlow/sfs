@@ -3,7 +3,7 @@
 
 //image stack constructor
 image_stack::image_stack(int height, int width, int size):
-height(height), width(width), size(size), SML(height, width, 4)
+height(height), width(width), size(size), SML(height, width, 11)
 {
     depth_map = Mat(height, width, CV_32F);
     //img_32f = Mat(height, width, CV_32F);
@@ -78,8 +78,8 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
         }
     }
     
-    if(max_focus > 1800){
-        return stack.size() - max_focus_depth;
+    if(max_focus > 1500){
+        return stack.size() - 1 - max_focus_depth;
     } else{
         return 0;
     }
@@ -88,20 +88,23 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
 //Function for generating a depth map from a focus stack processed with a focus measure
 void image_stack::create_depth_map()
 {
+
+    Mat dst;
+
     clock_t init, final;
 
     init=clock();
 
-    /*    
+    /*
     for(int z = 0; z < stack.size(); z++)
     {
         cout << "image " << z << endl;
-        convertScaleAbs(stack[z],img2, 0.1);
-        resize(img2, dst, Size(), 0.1, 0.1);
+        convertScaleAbs(stack[z],dst, 0.1);
+        resize(dst, dst, Size(), 0.1, 0.1);
         imshow("Depth Map", dst);
         waitKey(0);
     }
-    */  
+    */
 
     for(int y = 0; y < height; y++)
     {
@@ -117,8 +120,8 @@ void image_stack::create_depth_map()
     final = clock() - init;
     cout << "Generate depth map " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
-    Mat dst;
-    convertScaleAbs(depth_map,dst, 255 / stack.size());
+
+    convertScaleAbs(depth_map,dst, 255 / stack.size() - 1);
     resize(dst, dst, Size(), 0.2, 0.2);
     namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     imshow("Depth Map", dst);
