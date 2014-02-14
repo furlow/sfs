@@ -34,6 +34,8 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+*~
+.fuse*
 
 #directories
 images/
@@ -42,4 +44,3 @@ laplacian comparrison/
 other images/
 photo_shoot/
 stack/
-

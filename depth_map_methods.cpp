@@ -98,7 +98,7 @@ void image_stack::create_depth_map()
     clock_t init, final;
 
     init=clock();
-    
+    /*    
     for(int z = 0; z < stack.size(); z++)
     {
         cout << "image " << z << endl;
@@ -107,7 +107,7 @@ void image_stack::create_depth_map()
         imshow("Depth Map", dst);
         waitKey(0);
     }
-    
+    */  
     for(int y = 0; y < height; y++)
     {
         
