@@ -69,20 +69,13 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
     int max_focus_depth = 0;
     float max_focus = 0;
     
-    cout << "for pixel (" << y << "," << x << ")" << endl;
-    
     for(int z = 0; z < stack.size(); z++)
     {
-        
-        cout << "Focus value " << stack[z].at<float>(y,x) << endl;
-        
         if( stack[z].at<float>(y,x) > max_focus)
         {
             max_focus_depth = z;
             max_focus = stack[z].at<float>(y,x);
         }
-        
-        cout << max_focus_depth << endl;
     }
     
     if(max_focus > 1800){
@@ -98,6 +91,7 @@ void image_stack::create_depth_map()
     clock_t init, final;
 
     init=clock();
+
     /*    
     for(int z = 0; z < stack.size(); z++)
     {
@@ -108,6 +102,7 @@ void image_stack::create_depth_map()
         waitKey(0);
     }
     */  
+
     for(int y = 0; y < height; y++)
     {
         
@@ -119,7 +114,7 @@ void image_stack::create_depth_map()
         }
     }
     
-    final=clock()-init;
+    final = clock() - init;
     cout << "Generate depth map " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
     Mat dst;
@@ -141,15 +136,25 @@ Mat sum_modified_laplacian::operator()(Mat& image){
     
     init=clock();
         
-        for(int x = step; x < image.cols - step; x++)
+    for(int y = step; y < height - step; y++)
+    {
+        float* ML_ptr = ML.ptr<float>(y);
+        float* img_ptr = image.ptr<float>(y);
+        float* img_ptr_step_minus = image.ptr<float>(y - step);
+        float* img_ptr_step_plus = image.ptr<float>(y + step);
+        
+        for(int x = step; x < width - step; x++)
         {
-            for(int y = step; y < image.rows - step; y++)
-            {
-                ML.at<float>(y, x) = abs( 2 * image.at<float>(y, x) - image.at<float>(y, x - step) - image.at<float>(y, x + step))
-                +
-                abs( 2 * image.at<float>(y, x) - image.at<float>(y - step , x) - image.at<float>(y + step, x));
-            }
+            ML_ptr[x]
+            =
+            abs( 2 * img_ptr[x] - img_ptr[x - step] - img_ptr[x + step])
+            +
+            abs( 2 * img_ptr[x] - img_ptr_step_minus[x] - img_ptr_step_plus[x]);
+            
+            //cout << ML_ptr[x] << endl;
+            
         }
+    }
 
     
     final=clock()-init;
