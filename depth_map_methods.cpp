@@ -4,7 +4,7 @@
 
 //image stack constructor
 image_stack::image_stack(int height, int width, int size):
-height(height), width(width), size(size), SML(height, width, 5)
+height(height), width(width), size(size), SML(height, width, 9)
 {
     depth_map = Mat(height, width, CV_32F);
     //img_32f = Mat(height, width, CV_32F);
@@ -127,9 +127,7 @@ inline float image_stack::depth_mean(float Fm, float Fmp, float Fmm, int dm, int
                   (log(Fm) - log(Fmm))*(pow(dm, 2) - pow(dmp, 2))
                  )
                  /
-                 2 * dc * (
-                           (log(Fm) - log(Fmm)) + (log(Fm) - log(Fmp))
-                          );
+                 ( 2 * dc * ((log(Fm) - log(Fmm)) + (log(Fm) - log(Fmp)) ) );
     
     return d_mean;
 }
@@ -172,7 +170,7 @@ void image_stack::create_depth_map()
     cout << "Generate depth map " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
     depth_map.convertTo(dst, CV_8U, 255 / (stack.size() - 1));
-    GaussianBlur(dst, dst, Size(51,51), 0.0);
+    //GaussianBlur(dst, dst, Size(51,51), 0.0);
     resize(dst, dst, Size(), 0.2, 0.2);
     namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     imshow("Depth Map", dst);
@@ -217,7 +215,7 @@ Mat sum_modified_laplacian::operator()(Mat& image){
     init=clock();
     
     boxFilter(ML, SML, -1, Size(2*step+1,2*step+1), Point(-1,-1), false);
-    
+
     final=clock()-init;
     cout << "Run Box filter " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
