@@ -54,7 +54,7 @@ public:
     inline float guassian_depth_esstimation(int y, int x);
     
     //Mean depth interpolation calculations
-    inline float depth_mean(float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm, int dc);
+    inline float depth_mean(float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm);
 
     //Function for generating a depth map from a focus stack processed with a focus measure
     void create_depth_map();
@@ -68,4 +68,5 @@ private:
     //Mat img_32f;
     //Mat img;
     sum_modified_laplacian SML;
+    float* focus;
 };

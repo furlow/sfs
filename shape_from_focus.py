@@ -33,8 +33,9 @@ if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_
 	os.mkdir(img_dir + tmp_cropped)
 	os.mkdir(img_dir + output)
 	
-	align_image_stack_cmd = ["/Applications/Hugin.app/Contents/MacOS/align_image_stack", "-m", "-C", "-c", "4", "-a", img_dir + tmp_cropped,]
-	
+	#align_image_stack_cmd = ["/Applications/Hugin.app/Contents/MacOS/align_image_stack", "-m", "-C", "-c", "4", "-a", img_dir + tmp_cropped]
+	align_image_stack_cmd = ["align_image_stack", "-m", "-l", "-C", "-c", "4", "-a", img_dir + tmp_cropped]
+
 	for file in image_files:
 		shutil.copyfile(img_dir + file, img_dir + tmp_copy + file)
 		align_image_stack_cmd.append(img_dir + tmp_copy + file)

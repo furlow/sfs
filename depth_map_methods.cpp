@@ -72,16 +72,22 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
     
     for(int z = 0; z < stack.size(); z++)
     {
-        if( stack[z].at<float>(y,x) > max_focus)
+
+        float* focus = stack[z].ptr<float>(y,x);
+
+        if( *focus > max_focus)
         {
             max_focus_depth = z;
-            max_focus = stack[z].at<float>(y,x);
+            max_focus = *focus;
         }
     }
     
-    if(max_focus > 1500){
+    if(max_focus > 1500)
+    {
         return stack.size() - 1 - max_focus_depth;
-    } else{
+    } 
+    else
+    {
         return 0;
     }
 }
@@ -93,41 +99,46 @@ inline float image_stack::guassian_depth_esstimation(int y, int x)
     float max_focus = 0;
     float max_focus_minus = 0;
     float max_focus_plus = 0;
-    int change_d = 1;
     
     for(int z = 2; z < stack.size(); z++)
     {
         //find peak
-        if( stack[z - 1].at<float>(y,x) > max_focus &&
-            stack[z - 1].at<float>(y,x) >= stack[z].at<float>(y,x) &&
-            stack[z - 1].at<float>(y,x) >= stack[z - 2].at<float>(y,x)
+        if( *(stack[z - 1].ptr<float>(y,x)) > max_focus //&&
+            //*(stack[z - 1].ptr<float>(y,x)) > *(stack[z].ptr<float>(y,x)) //&& 
+             //stack[z - 1].at<float>(y,x) > stack[z - 2].at<float>(y,x)
           )
         {
-            max_focus = stack[z - 1].at<float>(y,x);
-            max_focus_minus = stack[z - 2].at<float>(y,x);
-            max_focus_plus = stack[z].at<float>(y,x);
+            max_focus = *(stack[z - 1].ptr<float>(y,x));
             dm = z - 1;
         }
     }
     
-    int dmm = dm - change_d;
+    int dmm = dm - 1;
+    int dmp = dm + 1;
+
+    max_focus_minus = *(stack[dmm].ptr<float>(y,x));
+    max_focus_plus = *(stack[dmp].ptr<float>(y,x));
     
-    int dmp = dm + change_d;
-    
-    return depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm, change_d);
+    return depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm);
 }
 
 
-inline float image_stack::depth_mean(float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm, int dc)
+inline float image_stack::depth_mean(float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm)
 {
+    float log_Fm = log(Fm);
+    float log_Fmm = log(Fmm);
+    float log_Fmp = log(Fmp);
+    float log_fm_minus_fmp = (log_Fm - log_Fmp);
+    float log_fm_minus_fmm = (log_Fm - log_Fmm);
+    float dm_sq = pow(dm, 2);
 
     float d_mean = (
-                  (log(Fm) - log(Fmp))*(pow(dm, 2) - pow(dmm, 2))
+                  log_fm_minus_fmp*(dm_sq - pow(dmm, 2))
                   -
-                  (log(Fm) - log(Fmm))*(pow(dm, 2) - pow(dmp, 2))
+                  log_fm_minus_fmm*(dm_sq - pow(dmp, 2))
                  )
                  /
-                 ( 2 * dc * ((log(Fm) - log(Fmm)) + (log(Fm) - log(Fmp)) ) );
+                 ( 2 * (log_fm_minus_fmm + log_fm_minus_fmp) );
     
     return d_mean;
 }
