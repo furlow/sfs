@@ -85,6 +85,67 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
     }
 }
 
+//Function for determining the focus maximum of a pixel
+inline float image_stack::guassian_depth_esstimation(int y, int x)
+{
+    int max_focus_depth = 0;
+    float max_focus = 0;
+    int k = 3;
+    int max_focus_minus 0;
+    int max_focus_plus = 0;
+    int dm = 0;
+    
+    for(int z = 2; z < stack.size(); z++)
+    {
+        //find peak
+        if( stack[z - 1].at<float>(y,x) > max_focus &&
+            stack[z - 1].at<float>(y,x) > stack[z].at<float>(y,x) &&
+            stack[z - 1].at<float>(y,x) > stack[z - 2].at<float>(y,x))
+        {
+            max_focus = stack[z - 1].at<float>(y,x)
+            max_focus_minus = stack[z - 2].at<float>(y,x)
+            max_focus_plus = stack[z].at<float>(y,x)
+            max_focus_depth = z - 1;
+        }
+    }
+    
+    dm_minus = dm - change_d
+    
+    dm_plus = dm + change_d
+    
+    d_mean =
+    
+    
+    
+    
+    
+    {
+        if( stack[z].at<float>(y,x) > max_focus)
+        {
+            max_focus_depth = z;
+            max_focus = stack[z].at<float>(y,x);
+        }
+    }
+    
+    if(max_focus > 1500){
+        return stack.size() - 1 - max_focus_depth;
+    } else{
+        return 0;
+    }
+}
+
+
+float depth_mean(int Fm, int Fmp, int Fmm, int dm, int dmp, int dmm, int dc){
+
+    
+    
+    
+    
+    
+}
+
+
+
 //Function for generating a depth map from a focus stack processed with a focus measure
 void image_stack::create_depth_map()
 {
