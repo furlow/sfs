@@ -44,9 +44,9 @@ if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_
 	subprocess.call(align_image_stack_cmd)
 
 
-image_files = [image_file for image_file in os.listdir(img_dir + tmp_cropped) if image_file.endswith('.tif')]
+image_files = [image_file for image_file in os.listdir(img_dir + tmp_copy) if image_file.endswith('.JPG')]
 sort.sort_nicely(image_files)
-img = cv2.imread(img_dir + tmp_cropped + image_files[0], 0)
+img = cv2.imread(img_dir + tmp_copy + image_files[0], 0)
 height, width = img.shape
 
 #Create a new image stack
@@ -57,7 +57,7 @@ stack = Pyimage_stack(height, width, len(image_files))
 start = time.time()
 for image_file in image_files:
     print "Adding " + image_file
-    stack.add(img_dir + tmp_cropped + image_file)
+    stack.add(img_dir + tmp_copy + image_file)
 finish = time.time()
 print 'Execution time =',finish-start
 

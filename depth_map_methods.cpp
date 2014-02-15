@@ -1,9 +1,10 @@
 #include "depth_map_methods.h"
 #include <time.h>
+#include <cmath>
 
 //image stack constructor
 image_stack::image_stack(int height, int width, int size):
-height(height), width(width), size(size), SML(height, width, 11)
+height(height), width(width), size(size), SML(height, width, 5)
 {
     depth_map = Mat(height, width, CV_32F);
     //img_32f = Mat(height, width, CV_32F);
@@ -88,60 +89,49 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
 //Function for determining the focus maximum of a pixel
 inline float image_stack::guassian_depth_esstimation(int y, int x)
 {
-    int max_focus_depth = 0;
-    float max_focus = 0;
-    int k = 3;
-    int max_focus_minus 0;
-    int max_focus_plus = 0;
     int dm = 0;
+    float max_focus = 0;
+    float max_focus_minus = 0;
+    float max_focus_plus = 0;
+    int change_d = 1;
     
     for(int z = 2; z < stack.size(); z++)
     {
         //find peak
         if( stack[z - 1].at<float>(y,x) > max_focus &&
-            stack[z - 1].at<float>(y,x) > stack[z].at<float>(y,x) &&
-            stack[z - 1].at<float>(y,x) > stack[z - 2].at<float>(y,x))
+            stack[z - 1].at<float>(y,x) >= stack[z].at<float>(y,x) &&
+            stack[z - 1].at<float>(y,x) >= stack[z - 2].at<float>(y,x)
+          )
         {
-            max_focus = stack[z - 1].at<float>(y,x)
-            max_focus_minus = stack[z - 2].at<float>(y,x)
-            max_focus_plus = stack[z].at<float>(y,x)
-            max_focus_depth = z - 1;
+            max_focus = stack[z - 1].at<float>(y,x);
+            max_focus_minus = stack[z - 2].at<float>(y,x);
+            max_focus_plus = stack[z].at<float>(y,x);
+            dm = z - 1;
         }
     }
     
-    dm_minus = dm - change_d
+    int dmm = dm - change_d;
     
-    dm_plus = dm + change_d
+    int dmp = dm + change_d;
     
-    d_mean =
-    
-    
-    
-    
-    
-    {
-        if( stack[z].at<float>(y,x) > max_focus)
-        {
-            max_focus_depth = z;
-            max_focus = stack[z].at<float>(y,x);
-        }
-    }
-    
-    if(max_focus > 1500){
-        return stack.size() - 1 - max_focus_depth;
-    } else{
-        return 0;
-    }
+    return depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm, change_d);
 }
 
 
-float depth_mean(int Fm, int Fmp, int Fmm, int dm, int dmp, int dmm, int dc){
+inline float image_stack::depth_mean(float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm, int dc)
+{
 
+    float d_mean = (
+                  (log(Fm) - log(Fmp))*(pow(dm, 2) - pow(dmm, 2))
+                  -
+                  (log(Fm) - log(Fmm))*(pow(dm, 2) - pow(dmp, 2))
+                 )
+                 /
+                 2 * dc * (
+                           (log(Fm) - log(Fmm)) + (log(Fm) - log(Fmp))
+                          );
     
-    
-    
-    
-    
+    return d_mean;
 }
 
 
@@ -174,15 +164,15 @@ void image_stack::create_depth_map()
         
         for(int x = 0; x < width; x++)
         {
-            y_ptr[x] = coarse_depth_esstimation(y,x);
+            y_ptr[x] = guassian_depth_esstimation(y, x);
         }
     }
     
     final = clock() - init;
     cout << "Generate depth map " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
-
-    convertScaleAbs(depth_map,dst, 255 / stack.size() - 1);
+    depth_map.convertTo(dst, CV_8U, 255 / (stack.size() - 1));
+    GaussianBlur(dst, dst, Size(51,51), 0.0);
     resize(dst, dst, Size(), 0.2, 0.2);
     namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     imshow("Depth Map", dst);
