@@ -44,3 +44,7 @@ laplacian comparrison/
 other images/
 photo_shoot/
 stack/
+
+#images
+*.jpg
+*.JPG

@@ -21,7 +21,8 @@ public:
  */
 class sum_modified_laplacian: public focus_measure{
 public:
-    sum_modified_laplacian(int height, int width, int step):step(step), height(height), width(width){
+    sum_modified_laplacian
+    (int height, int width, int step):step(step), height(height), width(width){
     
         ML = Mat(height, width, CV_32F);
         SML = Mat(height, width, CV_32F);
@@ -54,16 +55,22 @@ public:
     inline float guassian_depth_esstimation(int y, int x);
     
     //Mean depth interpolation calculations
-    inline float depth_mean(float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm);
+    inline float depth_mean
+    (float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm);
 
     //Function for generating a depth map from a focus stack processed with a focus measure
     void create_depth_map();
+    
+    //Function for generating an all in focus image
+    void fuse_focus();
     
 private:
     int height;
     int width;
     int size;
-    vector<Mat> stack;
+    vector<Mat> raw_stack;
+    vector<Mat> focus_map_stack;
+    Mat focused;
     Mat depth_map;
     //Mat img_32f;
     //Mat img;

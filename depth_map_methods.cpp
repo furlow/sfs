@@ -1,26 +1,23 @@
 #include "depth_map_methods.h"
 #include <time.h>
 #include <cmath>
+#include <exception>
+#include <vector>
 
 //image stack constructor
 image_stack::image_stack(int height, int width, int size):
 height(height), width(width), size(size), SML(height, width, 9)
 {
     depth_map = Mat(height, width, CV_32F);
-    //img_32f = Mat(height, width, CV_32F);
-    //img = Mat(height, width, CV_8U);
-
-    //stack.resize(size);
-    
-    cout << "The size is " << size << endl;
-    cout << "Currently allocated stack vector capacity = " << stack.capacity() << endl;
+    focused = Mat(height, width, CV_8UC3);
+    namedWindow( "Depth Map", 0);
 }
     
 //This function is used to add an image to the stack
 void image_stack::add(char* image_path)
 {
     
-    Mat dst, img2;
+    Mat dst, img2, colour_image, img_32f, gray_image;
     
     cout << image_path << endl;
     
@@ -28,33 +25,30 @@ void image_stack::add(char* image_path)
     
     init=clock();
 
-    Mat img = imread(image_path, 0);
+    colour_image = imread(image_path);
     
     final=clock()-init;
     cout << "Read image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
-    namedWindow( "Depth Map", 0);
-    //resize(img, dst, Size(), 0.1, 0.1);
-    //imshow("Depth Map", dst);
-    //waitKey(0);
-    
+    raw_stack.push_back(colour_image.clone());
+        
     init=clock();
     
-    Mat img_32f(height, width, CV_32F);
-
-    img.convertTo(img_32f, CV_32F);
+    cvtColor(colour_image, gray_image, CV_BGR2GRAY);
+    gray_image.convertTo(img_32f, CV_32F);
     
     final=clock()-init;
     cout << "Convert image to float " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
     init=clock();
     
-    stack.push_back(SML(img_32f).clone());
+    focus_map_stack.push_back(SML(img_32f).clone());
     
     final=clock()-init;
-    cout << "Run SML and push into the stack " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    cout << "Run SML and push into the stack " << (double)final / ((double)CLOCKS_PER_SEC) 
+    << endl;
     
-    cout << "Currently allocated stack vector capacity = " << stack.capacity() << endl;
+    cout << "Currently allocated stack vector capacity = " << raw_stack.capacity() << endl;
     
     //convertScaleAbs(img_32f,img2, 0.1);
     //resize(img2, dst, Size(), 0.1, 0.1);
@@ -70,10 +64,10 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
     int max_focus_depth = 0;
     float max_focus = 0;
     
-    for(int z = 0; z < stack.size(); z++)
+    for(int z = 0; z < focus_map_stack.size(); z++)
     {
 
-        float* focus = stack[z].ptr<float>(y,x);
+        float* focus = focus_map_stack[z].ptr<float>(y,x);
 
         if( *focus > max_focus)
         {
@@ -82,14 +76,7 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
         }
     }
     
-    if(max_focus > 1500)
-    {
-        return stack.size() - 1 - max_focus_depth;
-    } 
-    else
-    {
-        return 0;
-    }
+    return max_focus_depth;
 }
 
 //Function for determining the focus maximum of a pixel
@@ -100,15 +87,15 @@ inline float image_stack::guassian_depth_esstimation(int y, int x)
     float max_focus_minus = 0;
     float max_focus_plus = 0;
     
-    for(int z = 2; z < stack.size(); z++)
+    for(int z = 2; z < focus_map_stack.size(); z++)
     {
         //find peak
-        if( *(stack[z - 1].ptr<float>(y,x)) > max_focus //&&
+        if( *(focus_map_stack[z - 1].ptr<float>(y,x)) > max_focus //&&
             //*(stack[z - 1].ptr<float>(y,x)) > *(stack[z].ptr<float>(y,x)) //&& 
              //stack[z - 1].at<float>(y,x) > stack[z - 2].at<float>(y,x)
           )
         {
-            max_focus = *(stack[z - 1].ptr<float>(y,x));
+            max_focus = *(focus_map_stack[z - 1].ptr<float>(y,x));
             dm = z - 1;
         }
     }
@@ -116,14 +103,15 @@ inline float image_stack::guassian_depth_esstimation(int y, int x)
     int dmm = dm - 1;
     int dmp = dm + 1;
 
-    max_focus_minus = *(stack[dmm].ptr<float>(y,x));
-    max_focus_plus = *(stack[dmp].ptr<float>(y,x));
+    max_focus_minus = *(focus_map_stack[dmm].ptr<float>(y,x));
+    max_focus_plus = *(focus_map_stack[dmp].ptr<float>(y,x));
     
     return depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm);
 }
 
 
-inline float image_stack::depth_mean(float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm)
+inline float image_stack::depth_mean
+(float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm)
 {
     float log_Fm = log(Fm);
     float log_Fmm = log(Fmm);
@@ -173,20 +161,64 @@ void image_stack::create_depth_map()
         
         for(int x = 0; x < width; x++)
         {
-            y_ptr[x] = guassian_depth_esstimation(y, x);
+            y_ptr[x] = coarse_depth_esstimation(y, x);
         }
     }
     
     final = clock() - init;
     cout << "Generate depth map " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
-    depth_map.convertTo(dst, CV_8U, 255 / (stack.size() - 1));
-    //GaussianBlur(dst, dst, Size(51,51), 0.0);
+    depth_map.convertTo(dst, CV_8U, 255 / (raw_stack.size() - 1));
     resize(dst, dst, Size(), 0.2, 0.2);
     namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     imshow("Depth Map", dst);
     
     waitKey(0);
+    
+    cout << "Saving depth map to file" << endl;
+    imwrite( "depth_map.jpg", dst );
+    
+    fuse_focus();
+}
+
+void image_stack::fuse_focus(){
+
+	int x, y, d;
+
+    Mat dst;
+
+    clock_t init, final;
+    
+    init=clock();
+    
+    cout << "Running fuse focus" << endl;
+
+    for(int y = 0; y < height; y++)
+    {
+        
+        Vec3b* focused_y_ptr = focused.ptr<Vec3b>(y);
+        float* depth_map_y_ptr = depth_map.ptr<float>(y);
+        
+        //Add pointer array of each image row in the raw_stack
+        
+        for(int x = 0; x < width; x++)
+        {
+            focused_y_ptr[x] = raw_stack[ int( depth_map_y_ptr[x] ) ].at<Vec3b>(y, x);
+
+        }
+    }
+    
+    final = clock() - init;
+    cout << "Generate fuse focused image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    resize(focused, dst, Size(), 0.2, 0.2);
+    namedWindow( "Depth Map", WINDOW_AUTOSIZE );
+    imshow("Depth Map", dst);
+    
+    waitKey(0);
+    
+    cout << "Saving fused image to file" << endl;
+    imwrite( "fused_focus.jpg", focused );
+    
 }
 
 /* Sum Modified Laplacian focus measure
