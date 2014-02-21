@@ -64,6 +64,12 @@ public:
     //Function for generating an all in focus image
     void fuse_focus();
     
+    //Function for artificially refocusing an image
+    void refocus(int depth_of_feild, int depth_focus_point);
+    
+    //Function used to apply boxfilter blur to a single pixel
+    inline void boxfilter_single_pixel(Mat& src, Mat& dst, int y, int x, int ksize);
+    
 private:
     int height;
     int width;
@@ -71,9 +77,8 @@ private:
     vector<Mat> raw_stack;
     vector<Mat> focus_map_stack;
     Mat focused;
+    Mat refocused;
     Mat depth_map;
-    //Mat img_32f;
-    //Mat img;
+    Mat dst; //temporary storage of an array
     sum_modified_laplacian SML;
-    float* focus;
-};
+    };

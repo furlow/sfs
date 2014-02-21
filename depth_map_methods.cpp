@@ -10,6 +10,7 @@ height(height), width(width), size(size), SML(height, width, 9)
 {
     depth_map = Mat(height, width, CV_32F);
     focused = Mat(height, width, CV_8UC3);
+    refocused = Mat(height, width, CV_8UC3);
     namedWindow( "Depth Map", 0);
 }
     
@@ -17,7 +18,7 @@ height(height), width(width), size(size), SML(height, width, 9)
 void image_stack::add(char* image_path)
 {
     
-    Mat dst, img2, colour_image, img_32f, gray_image;
+    Mat img2, colour_image, img_32f, gray_image;
     
     cout << image_path << endl;
     
@@ -131,14 +132,9 @@ inline float image_stack::depth_mean
     return d_mean;
 }
 
-
-
 //Function for generating a depth map from a focus stack processed with a focus measure
 void image_stack::create_depth_map()
 {
-
-    Mat dst;
-
     clock_t init, final;
 
     init=clock();
@@ -165,6 +161,9 @@ void image_stack::create_depth_map()
         }
     }
     
+    //Clear out the focus map stack as the data is no longer needed
+    focus_map_stack.clear();
+    
     final = clock() - init;
     cout << "Generate depth map " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
@@ -179,16 +178,21 @@ void image_stack::create_depth_map()
     imwrite( "depth_map.jpg", dst );
     
     fuse_focus();
+    
+    int focus_depth;
+    
+    cout << "Input the focus depth:";
+    
+    cin >> focus_depth;
+    
+    refocus(0, focus_depth);
 }
 
 void image_stack::fuse_focus(){
 
 	int x, y, d;
-
-    Mat dst;
-
+	
     clock_t init, final;
-    
     init=clock();
     
     cout << "Running fuse focus" << endl;
@@ -208,6 +212,9 @@ void image_stack::fuse_focus(){
         }
     }
     
+    //Clear out the raw_stack as the data is no longer needed
+    raw_stack.clear();
+    
     final = clock() - init;
     cout << "Generate fuse focused image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     resize(focused, dst, Size(), 0.2, 0.2);
@@ -221,12 +228,100 @@ void image_stack::fuse_focus(){
     
 }
 
+//function used to artificially refocus an image
+void image_stack::refocus(int depth_of_feild, int depth_focus_point){
+
+	int ksize;
+	
+	clock_t init, final;
+    init=clock();
+
+	for(int y = 0; y < height; y++)
+	{
+        for(int x = 0; x < width; x++)
+        {
+        	ksize = ( abs( depth_map.at<float>(y, x) - depth_focus_point ) * 2 ) + 1;
+        	boxfilter_single_pixel(focused, refocused, y, x, ksize);
+        }
+    }
+    
+	final = clock() - init;
+    cout << "refocused image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    resize(refocused, dst, Size(), 0.2, 0.2);
+    namedWindow( "Depth Map", WINDOW_AUTOSIZE );
+    imshow("Depth Map", dst);
+    
+    waitKey(0);
+    
+    cout << "Saving fused image to file" << endl;
+    imwrite( "refocused.jpg", focused );
+	
+}
+
+inline void image_stack::boxfilter_single_pixel(Mat& src, Mat& dst, int y, int x, int ksize){
+
+	int ksize_half = (ksize / 2);
+	//cout << "ksize_half " << ksize_half << endl;
+	int b_sum = 0, g_sum = 0, r_sum = 0;
+	int lower_lim_col, lower_lim_row;
+	
+	if(y - ksize_half < 0){ 
+		lower_lim_row = 0;	
+	}
+	else
+	{
+		lower_lim_row = ksize_half;
+	}
+	
+	if(x - ksize_half < 0){
+		lower_lim_col = 0;
+	}
+	else
+	{
+		lower_lim_col =  ksize_half;
+	}
+	
+	if(ksize == 1) cout 
+	<< "lower_lim_col " << lower_lim_col
+	<< ", lower_lim_row " << lower_lim_row 
+	<< endl;
+	
+	int i = 0;
+	
+	for(int row = y - lower_lim_row; row <= (y + ksize_half) && row < focused.rows; row++)
+	{
+		for(int col = x - lower_lim_col; col <= (x + ksize_half) && col < focused.cols; col++)
+		{
+			b_sum += focused.at<Vec3b>(row, col)[0];
+			g_sum += focused.at<Vec3b>(row, col)[1];
+			r_sum += focused.at<Vec3b>(row, col)[2];
+			i++;
+		}
+	}
+	
+	if(ksize == 1) cout << "ksize squared " << ksize * ksize << ", loop run " << i << endl;
+	
+	if(ksize == 1) cout 
+	<< "blue sum " << b_sum 
+	<< ", green sum " << g_sum 
+	<< ", red sum " << r_sum << endl; 
+
+		
+	refocused.at<Vec3b>(y,x)[0] = (b_sum / (ksize * ksize));
+	refocused.at<Vec3b>(y,x)[1] = (g_sum / (ksize * ksize));
+	refocused.at<Vec3b>(y,x)[2] = (r_sum / (ksize * ksize));
+	
+	if(ksize == 1) cout 
+	<< "blue " << int(refocused.at<Vec3b>(y,x)[0]) 
+	<< ", green " << int(refocused.at<Vec3b>(y,x)[1]) 
+	<< ", red " << int(refocused.at<Vec3b>(y,x)[2]) << endl; 
+
+}
+
 /* Sum Modified Laplacian focus measure
  */
 Mat sum_modified_laplacian::operator()(Mat& image){
     
-    Mat img, dst;
-
     clock_t init, final;
     
     init=clock();
@@ -247,7 +342,6 @@ Mat sum_modified_laplacian::operator()(Mat& image){
             abs( 2 * img_ptr[x] - img_ptr_step_minus[x] - img_ptr_step_plus[x]);
             
             //cout << ML_ptr[x] << endl;
-            
         }
     }
 
