@@ -189,8 +189,6 @@ void image_stack::create_depth_map()
 }
 
 void image_stack::fuse_focus(){
-
-	int x, y, d;
 	
     clock_t init, final;
     init=clock();
@@ -240,8 +238,8 @@ void image_stack::refocus(int depth_of_feild, int depth_focus_point){
 	{
         for(int x = 0; x < width; x++)
         {
-        	ksize = ( abs( depth_map.at<float>(y, x) - depth_focus_point ) * 2 ) + 1;
-        	boxfilter_single_pixel(focused, refocused, y, x, ksize);
+        	ksize = ( abs( *(depth_map.ptr<float>(y, x)) - depth_focus_point ) * 4 ) + 1;
+        	boxfilter_single_pixel(y, x, ksize);
         }
     }
     
@@ -254,13 +252,14 @@ void image_stack::refocus(int depth_of_feild, int depth_focus_point){
     waitKey(0);
     
     cout << "Saving fused image to file" << endl;
-    imwrite( "refocused.jpg", focused );
+    imwrite( "refocused.jpg", refocused );
 	
 }
 
-inline void image_stack::boxfilter_single_pixel(Mat& src, Mat& dst, int y, int x, int ksize){
+inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize){
 
 	int ksize_half = (ksize / 2);
+	int ksize_sq = ksize * ksize;
 	//cout << "ksize_half " << ksize_half << endl;
 	int b_sum = 0, g_sum = 0, r_sum = 0;
 	int lower_lim_col, lower_lim_row;
@@ -280,42 +279,23 @@ inline void image_stack::boxfilter_single_pixel(Mat& src, Mat& dst, int y, int x
 	{
 		lower_lim_col =  ksize_half;
 	}
-	
-	if(ksize == 1) cout 
-	<< "lower_lim_col " << lower_lim_col
-	<< ", lower_lim_row " << lower_lim_row 
-	<< endl;
-	
-	int i = 0;
-	
+		
 	for(int row = y - lower_lim_row; row <= (y + ksize_half) && row < focused.rows; row++)
 	{
+		Vec3b* row_ptr = focused.ptr<Vec3b>(row);
 		for(int col = x - lower_lim_col; col <= (x + ksize_half) && col < focused.cols; col++)
 		{
-			b_sum += focused.at<Vec3b>(row, col)[0];
-			g_sum += focused.at<Vec3b>(row, col)[1];
-			r_sum += focused.at<Vec3b>(row, col)[2];
-			i++;
+			b_sum += row_ptr[col][0];
+			g_sum += row_ptr[col][1];
+			r_sum += row_ptr[col][2];
 		}
 	}
 	
-	if(ksize == 1) cout << "ksize squared " << ksize * ksize << ", loop run " << i << endl;
-	
-	if(ksize == 1) cout 
-	<< "blue sum " << b_sum 
-	<< ", green sum " << g_sum 
-	<< ", red sum " << r_sum << endl; 
+	Vec3b* pixel = refocused.ptr<Vec3b>(y);
 
-		
-	refocused.at<Vec3b>(y,x)[0] = (b_sum / (ksize * ksize));
-	refocused.at<Vec3b>(y,x)[1] = (g_sum / (ksize * ksize));
-	refocused.at<Vec3b>(y,x)[2] = (r_sum / (ksize * ksize));
-	
-	if(ksize == 1) cout 
-	<< "blue " << int(refocused.at<Vec3b>(y,x)[0]) 
-	<< ", green " << int(refocused.at<Vec3b>(y,x)[1]) 
-	<< ", red " << int(refocused.at<Vec3b>(y,x)[2]) << endl; 
-
+	pixel[x][0] = (b_sum / ksize_sq);
+	pixel[x][1] = (g_sum / ksize_sq);
+	pixel[x][2] = (r_sum / ksize_sq);
 }
 
 /* Sum Modified Laplacian focus measure

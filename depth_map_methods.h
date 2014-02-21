@@ -68,7 +68,7 @@ public:
     void refocus(int depth_of_feild, int depth_focus_point);
     
     //Function used to apply boxfilter blur to a single pixel
-    inline void boxfilter_single_pixel(Mat& src, Mat& dst, int y, int x, int ksize);
+    inline void boxfilter_single_pixel(int y, int x, int ksize);
     
 private:
     int height;
