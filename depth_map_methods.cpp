@@ -193,6 +193,8 @@ void image_stack::fuse_focus(){
     clock_t init, final;
     init=clock();
     
+    Vector<Vec3b*> raw_stack_y_ptr;
+    
     cout << "Running fuse focus" << endl;
 
     for(int y = 0; y < height; y++)
@@ -200,14 +202,19 @@ void image_stack::fuse_focus(){
         
         Vec3b* focused_y_ptr = focused.ptr<Vec3b>(y);
         float* depth_map_y_ptr = depth_map.ptr<float>(y);
+        for(int i = 0; i < raw_stack.size(); i++){
+        	raw_stack_y_ptr.push_back( raw_stack[i].ptr<Vec3b>(y) );
+        }
         
         //Add pointer array of each image row in the raw_stack
         
         for(int x = 0; x < width; x++)
         {
-            focused_y_ptr[x] = raw_stack[ int( depth_map_y_ptr[x] ) ].at<Vec3b>(y, x);
+            focused_y_ptr[x] = raw_stack_y_ptr[ int(depth_map_y_ptr[x]) ][x];
 
         }
+        
+        raw_stack_y_ptr.clear();
     }
     
     //Clear out the raw_stack as the data is no longer needed
