@@ -202,6 +202,7 @@ void image_stack::fuse_focus(){
         
         Vec3b* focused_y_ptr = focused.ptr<Vec3b>(y);
         float* depth_map_y_ptr = depth_map.ptr<float>(y);
+        
         for(int i = 0; i < raw_stack.size(); i++){
         	raw_stack_y_ptr.push_back( raw_stack[i].ptr<Vec3b>(y) );
         }
@@ -240,15 +241,55 @@ void image_stack::refocus(int depth_of_feild, int depth_focus_point){
 	
 	clock_t init, final;
     init=clock();
+    
+    Vector<Vec3b*> blurred_stack_y_ptr;
+    
+    //for loop which blurs the infocus image from 0 now blur to the max blur required
+    for(int z = 0; z < size; z++){
+        init=clock();
 
-	for(int y = 0; y < height; y++)
-	{
+    	//GaussianBlur(focused, dst, Size(z * 4 + 1, z * 4 + 1), 0, 0);
+    	boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
+
+    	
+    	final = clock() - init;
+    	cout << "GaussianBlur" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    	
+    	init=clock();
+    	
+    	blurred.push_back(dst.clone());
+    	
+    	final = clock() - init;
+    	cout << "Clone and push_back" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    }
+    
+	final = clock() - init;
+    cout << "blur images" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    
+    init=clock();
+     
+    for(int y = 0; y < height; y++)
+    {
+        
+        Vec3b* refocused_y_ptr = refocused.ptr<Vec3b>(y);
+        float* depth_map_y_ptr = depth_map.ptr<float>(y);
+        
+        for(int i = 0; i < blurred.size(); i++){
+        	blurred_stack_y_ptr.push_back( blurred[i].ptr<Vec3b>(y) );
+        }
+        
+        //Add pointer array of each image row in the raw_stack
+        
         for(int x = 0; x < width; x++)
         {
-        	ksize = ( abs( *(depth_map.ptr<float>(y, x)) - depth_focus_point ) * 4 ) + 1;
-        	boxfilter_single_pixel(y, x, ksize);
+            refocused_y_ptr[x] = blurred_stack_y_ptr[ abs(int(depth_map_y_ptr[x]) - depth_focus_point) ][x];
+
         }
+        
+        blurred_stack_y_ptr.clear();
     }
+    //for loop which selects the correct pixels based on the depth map value
+
     
 	final = clock() - init;
     cout << "refocused image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;

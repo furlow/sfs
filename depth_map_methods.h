@@ -76,6 +76,7 @@ private:
     int size;
     vector<Mat> raw_stack;
     vector<Mat> focus_map_stack;
+    vector<Mat> blurred;
     Mat focused;
     Mat refocused;
     Mat depth_map;
