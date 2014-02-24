@@ -5,21 +5,20 @@
 #include <vector>
 
 //image stack constructor
-image_stack::image_stack(int height, int width, int size):
-height(height), width(width), size(size), SML(height, width, 9)
+image_stack::image_stack(int height, int width, int size, char* output_img_dir):
+height(height), width(width), size(size), output_img_dir(output_img_dir), SML(height, width, 9)
 {
     depth_map = Mat(height, width, CV_32F);
     focused = Mat(height, width, CV_8UC3);
     refocused = Mat(height, width, CV_8UC3);
-    namedWindow( "Depth Map", 0);
 }
     
 //This function is used to add an image to the stack
 void image_stack::add(char* image_path)
 {
     
-    Mat img2, colour_image, img_32f, gray_image;
-    
+    Mat colour_image, img_32f, gray_image;
+        
     cout << image_path << endl;
     
     clock_t init, final;
@@ -48,15 +47,6 @@ void image_stack::add(char* image_path)
     final=clock()-init;
     cout << "Run SML and push into the stack " << (double)final / ((double)CLOCKS_PER_SEC) 
     << endl;
-    
-    cout << "Currently allocated stack vector capacity = " << raw_stack.capacity() << endl;
-    
-    //convertScaleAbs(img_32f,img2, 0.1);
-    //resize(img2, dst, Size(), 0.1, 0.1);
-    //imshow("Depth Map", dst);
-    
-    //waitKey(0);
-    
 }
 
 //Function for determining the focus maximum of a pixel
@@ -132,13 +122,9 @@ inline float image_stack::depth_mean
     return d_mean;
 }
 
-//Function for generating a depth map from a focus stack processed with a focus measure
+//Function for generating a depth map
 void image_stack::create_depth_map()
 {
-    clock_t init, final;
-
-    init=clock();
-
     /*
     for(int z = 0; z < stack.size(); z++)
     {
@@ -164,34 +150,18 @@ void image_stack::create_depth_map()
     //Clear out the focus map stack as the data is no longer needed
     focus_map_stack.clear();
     
-    final = clock() - init;
-    cout << "Generate depth map " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-    
+    //Display the output image
     depth_map.convertTo(dst, CV_8U, 255 / (raw_stack.size() - 1));
     resize(dst, dst, Size(), 0.2, 0.2);
     namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     imshow("Depth Map", dst);
     
-    waitKey(0);
-    
+    //Save the image to file
     cout << "Saving depth map to file" << endl;
-    imwrite( "depth_map.jpg", dst );
-    
-    fuse_focus();
-    
-    int focus_depth;
-    
-    cout << "Input the focus depth:";
-    
-    cin >> focus_depth;
-    
-    refocus(0, focus_depth);
+    imwrite( output_img_dir + "depth_map.jpg", dst );
 }
 
 void image_stack::fuse_focus(){
-	
-    clock_t init, final;
-    init=clock();
     
     Vector<Vec3b*> raw_stack_y_ptr;
     
@@ -221,53 +191,44 @@ void image_stack::fuse_focus(){
     //Clear out the raw_stack as the data is no longer needed
     raw_stack.clear();
     
-    final = clock() - init;
-    cout << "Generate fuse focused image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    //Display the fused focus image
     resize(focused, dst, Size(), 0.2, 0.2);
-    namedWindow( "Depth Map", WINDOW_AUTOSIZE );
-    imshow("Depth Map", dst);
-    
-    waitKey(0);
-    
+    namedWindow( "Fused Focus", WINDOW_AUTOSIZE );
+    imshow("Fused Focus", dst);
+     
+    //Save the fused focus image to file   
     cout << "Saving fused image to file" << endl;
-    imwrite( "fused_focus.jpg", focused );
-    
+    imwrite( output_img_dir + "fused_focus.jpg", focused );
 }
 
-//function used to artificially refocus an image
-void image_stack::refocus(int depth_of_feild, int depth_focus_point){
+void image_stack::generate_blurred_images(){
 
-	int ksize;
-	
 	clock_t init, final;
     init=clock();
     
-    Vector<Vec3b*> blurred_stack_y_ptr;
-    
     //for loop which blurs the infocus image from 0 now blur to the max blur required
     for(int z = 0; z < size; z++){
-        init=clock();
-
     	//GaussianBlur(focused, dst, Size(z * 4 + 1, z * 4 + 1), 0, 0);
     	boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
-
-    	
-    	final = clock() - init;
-    	cout << "GaussianBlur" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-    	
-    	init=clock();
-    	
     	blurred.push_back(dst.clone());
-    	
-    	final = clock() - init;
-    	cout << "Clone and push_back" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     }
     
 	final = clock() - init;
     cout << "blur images" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     
+}
+
+//function used to artificially refocus an image
+void image_stack::refocus(int depth_of_field, int depth_focus_point){
+
+	clock_t init, final;
     init=clock();
-     
+
+	if(blurred.size() != size) generate_blurred_images();
+	
+    Vector<Vec3b*> blurred_stack_y_ptr;
+         
+    //for loop which selects the correct pixels based on the depth map value
     for(int y = 0; y < height; y++)
     {
         
@@ -288,22 +249,27 @@ void image_stack::refocus(int depth_of_feild, int depth_focus_point){
         
         blurred_stack_y_ptr.clear();
     }
-    //for loop which selects the correct pixels based on the depth map value
-
     
-	final = clock() - init;
-    cout << "refocused image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    final = clock() - init;
+    cout << "Refocus image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    
+    init=clock();
+    
+    //Display the refocused image
     resize(refocused, dst, Size(), 0.2, 0.2);
-    namedWindow( "Depth Map", WINDOW_AUTOSIZE );
-    imshow("Depth Map", dst);
+    imshow("Fused Focus", dst);
     
-    waitKey(0);
+    final = clock() - init;
+    cout << "Displaying image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+        
+    //Save the refocused image to file
+    //cout << "Saving fused image to file" << endl;
+    //imwrite( output_img_dir + "refocused.jpg", refocused );
     
-    cout << "Saving fused image to file" << endl;
-    imwrite( "refocused.jpg", refocused );
-	
+    
 }
 
+//This function is most likely obsolete
 inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize){
 
 	int ksize_half = (ksize / 2);

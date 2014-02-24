@@ -32,14 +32,14 @@ if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_
 	os.mkdir(img_dir + tmp_copy)
 	os.mkdir(img_dir + tmp_cropped)
 	os.mkdir(img_dir + output)
-	
+
 	#align_image_stack_cmd = ["/Applications/Hugin.app/Contents/MacOS/align_image_stack", "-m", "-C", "-c", "4", "-a", img_dir + tmp_cropped]
 	align_image_stack_cmd = ["align_image_stack", "-m", "-l", "-C", "-c", "4", "-a", img_dir + tmp_cropped]
 
 	for file in image_files:
 		shutil.copyfile(img_dir + file, img_dir + tmp_copy + file)
 		align_image_stack_cmd.append(img_dir + tmp_copy + file)
-	
+
 	#Align image files to remove focus magnification
 	print('Aligning images...')
 	subprocess.call(align_image_stack_cmd)
@@ -52,7 +52,7 @@ height, width = img.shape
 
 #Create a new image stack
 print('Creating image stack with dimensions', height, width)
-stack = Pyimage_stack(height, width, len(image_files))
+stack = Pyimage_stack(height, width, len(image_files), img_dir + output)
 
 #Add image files
 start = time.time()
@@ -69,6 +69,25 @@ stack.create_depth_map()
 finish = time.time()
 print 'Execution time =',finish-start
 
+#Generate an all in focus image
+start = time.time()
+print('Generating fuse focus image')
+stack.fuse_focus()
+finish = time.time()
+print 'Execution time =',finish-start
+
+#Refocus the image
+try:
+	while(True):
+
+		focus_depth = int(raw_input("Choose depth to refocus to: "))
+		print('refoucsing the image')
+		start = time.time()
+		stack.refocus(0, focus_depth)
+		finish = time.time()
+		print 'Execution time =',finish-start
+except(KeyboardInterrupt):
+	raise
 #write image out
 #cv2.imwrite( img_dir + output + 'out.jpg', stack.depth_map)
 
@@ -87,15 +106,14 @@ print 'Execution time =',finish-start
 #This function draws a graph of the focus through the stack
 #It updates when the user clicks the mouse on a pixel
 #def onclick(event):
-#    	if event.xdata != None and event.ydata != None:
-#	    	print(event.xdata, event.ydata)
-#	    	y = int(event.xdata)
-#	    	x = int(event.ydata)
-#	    	data = stack.get_focus_data(y, x)
-            #	    	print(data)
-            #	    	line1.set_ydata(data)
-#    		fig2.canvas.draw()
-
+	#if event.xdata != None and event.ydata != None:
+		#print(event.xdata, event.ydata)
+		#y = int(event.xdata)
+		#x = int(event.ydata)
+		#data = stack.get_focus_data(y, x)
+		#print(data)
+		#line1.set_ydata(data)
+		#fig2.canvas.draw()
 #try:
 #	cid = fig.canvas.mpl_connect('button_press_event', onclick)
 #	plt.show()

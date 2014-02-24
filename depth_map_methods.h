@@ -2,6 +2,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <iostream>
 #include <list>
+#include <string>
 
 using namespace std;
 using namespace cv;
@@ -33,7 +34,7 @@ private:
     int step;
     int height;
     int width;
-    Mat ML;
+    Mat ML; //need to remove these when un needed
     Mat SML;
 };
 
@@ -41,7 +42,7 @@ private:
 class image_stack{
 public:
     //Constructor
-    image_stack(int height, int width, int size);
+    image_stack(int height, int width, int size, char* output_img_dir);
     
     //This function is used to add an image to the stack
     void add(char* image_path);
@@ -67,6 +68,10 @@ public:
     //Function for artificially refocusing an image
     void refocus(int depth_of_feild, int depth_focus_point);
     
+    //Function for generating blurred images for use in the refocus algorithm
+    void generate_blurred_images();
+
+    
     //Function used to apply boxfilter blur to a single pixel
     inline void boxfilter_single_pixel(int y, int x, int ksize);
     
@@ -74,12 +79,13 @@ private:
     int height;
     int width;
     int size;
+    string output_img_dir;
     vector<Mat> raw_stack;
     vector<Mat> focus_map_stack;
     vector<Mat> blurred;
+    sum_modified_laplacian SML;
     Mat focused;
     Mat refocused;
     Mat depth_map;
     Mat dst; //temporary storage of an array
-    sum_modified_laplacian SML;
-    };
+};
