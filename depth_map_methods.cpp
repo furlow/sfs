@@ -78,7 +78,7 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
 }
 
 //Function for determining the focus maximum of a pixel
-inline float image_stack::guassian_depth_esstimation(int y, int x)
+inline float image_stack::gaussian_depth_esstimation(int y, int x)
 {
     int dm = 0;
     float max_focus = 0;
@@ -104,8 +104,10 @@ inline float image_stack::guassian_depth_esstimation(int y, int x)
     max_focus_minus = *(focus_map_stack[dmm].ptr<float>(y,x));
     max_focus_plus = *(focus_map_stack[dmp].ptr<float>(y,x));
     
-    if(max_focus > threshold){
-		return depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm);
+    float depth = depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm);
+    
+    if(max_focus > threshold && depth < size && depth >= 0){
+    	return depth;		
 	}
 	else
 	{
@@ -156,7 +158,7 @@ void image_stack::create_depth_map()
         
         for(int x = 0; x < width; x++)
         {
-            y_ptr[x] = coarse_depth_esstimation(y, x);
+            y_ptr[x] = gaussian_depth_esstimation(y, x);
         }
     }
     
@@ -194,6 +196,7 @@ void image_stack::fuse_focus(){
         
         for(int x = 0; x < width; x++)
         {
+        	//cout << int(depth_map_y_ptr[x]) << endl;
             focused_y_ptr[x] = raw_stack_y_ptr[ int(depth_map_y_ptr[x]) ][x];
 
         }

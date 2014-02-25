@@ -52,11 +52,11 @@ public:
     
     //Function for determining the focus maximum of a pixel
     //using coarse depth esstimation method
-    inline float coarse_depth_esstimation(int y, int x, unsigned char** focus_map_stack_y_ptr);
+    inline float coarse_depth_esstimation(int y, int x);
     
     //Function for determing the focus maximum of a pixel
     //using guassian interpolation
-    inline float guassian_depth_esstimation(int y, int x);
+    inline float gaussian_depth_esstimation(int y, int x);
     
     //Mean depth interpolation calculations
     inline float depth_mean
