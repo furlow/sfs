@@ -224,8 +224,8 @@ void image_stack::generate_blurred_images(){
     
     //for loop which blurs the infocus image from 0 now blur to the max blur required
     for(int z = 0; z < size; z++){
-    	//GaussianBlur(focused, dst, Size(z * 4 + 1, z * 4 + 1), 0, 0);
-    	boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
+    	GaussianBlur(focused, dst, Size(z * 6 + 1, z * 6 + 1), 0, 0);
+    	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
     	blurred.push_back(dst.clone());
     }
     
