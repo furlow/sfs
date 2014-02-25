@@ -4,7 +4,7 @@
 #Image stack class definition
 cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
-		image_stack(int, int, int, char*) except +
+		image_stack(int, int, int, int, char*) except +
 		void add(char*)
 		void create_depth_map()
 		void fuse_focus()
@@ -12,8 +12,8 @@ cdef extern from "depth_map_methods.h":
 
 cdef class Pyimage_stack:
 	cdef image_stack *thisptr
-	def __cinit__(self, int height, int width, int size, char* output_img_dir):
-		self.thisptr = new image_stack(height, width, size, output_img_dir)
+	def __cinit__(self, int height, int width, int size, int threshold, char* output_img_dir):
+		self.thisptr = new image_stack(height, width, size, threshold, output_img_dir)
 	def __dealloc__(self):
 		del self.thisptr
 	def add(self, char* image_path):

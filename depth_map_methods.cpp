@@ -5,8 +5,8 @@
 #include <vector>
 
 //image stack constructor
-image_stack::image_stack(int height, int width, int size, char* output_img_dir):
-height(height), width(width), size(size), output_img_dir(output_img_dir), SML(height, width, 9)
+image_stack::image_stack(int height, int width, int size, int threshold, char* output_img_dir):
+height(height), width(width), size(size), threshold(threshold) , output_img_dir(output_img_dir), SML(height, width, 9)
 {
     depth_map = Mat(height, width, CV_32F);
     focused = Mat(height, width, CV_8UC3);
@@ -67,7 +67,14 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
         }
     }
     
-    return max_focus_depth;
+    if(max_focus > threshold){
+		return max_focus_depth;
+	}
+	else
+	{
+		return size - 1;
+	}
+		
 }
 
 //Function for determining the focus maximum of a pixel
@@ -97,7 +104,13 @@ inline float image_stack::guassian_depth_esstimation(int y, int x)
     max_focus_minus = *(focus_map_stack[dmm].ptr<float>(y,x));
     max_focus_plus = *(focus_map_stack[dmp].ptr<float>(y,x));
     
-    return depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm);
+    if(max_focus > threshold){
+		return depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm);
+	}
+	else
+	{
+		return size - 1;
+	}
 }
 
 
@@ -226,17 +239,17 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point){
 
 	if(blurred.size() != size) generate_blurred_images();
 	
-    Vector<Vec3b*> blurred_stack_y_ptr;
+    Vec3b* blurred_stack_y_ptr[size];
          
-    //for loop which selects the correct pixels based on the depth map value
+    //for loop which seVelects the correct pixels based on the depth map value
     for(int y = 0; y < height; y++)
     {
         
         Vec3b* refocused_y_ptr = refocused.ptr<Vec3b>(y);
         float* depth_map_y_ptr = depth_map.ptr<float>(y);
         
-        for(int i = 0; i < blurred.size(); i++){
-        	blurred_stack_y_ptr.push_back( blurred[i].ptr<Vec3b>(y) );
+        for(int i = 0; i < size; i++){
+        	blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
         }
         
         //Add pointer array of each image row in the raw_stack
@@ -246,8 +259,6 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point){
             refocused_y_ptr[x] = blurred_stack_y_ptr[ abs(int(depth_map_y_ptr[x]) - depth_focus_point) ][x];
 
         }
-        
-        blurred_stack_y_ptr.clear();
     }
     
     final = clock() - init;

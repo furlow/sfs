@@ -42,14 +42,17 @@ private:
 class image_stack{
 public:
     //Constructor
-    image_stack(int height, int width, int size, char* output_img_dir);
+    image_stack(int height, int width, int size, int threshold ,char* output_img_dir);
     
     //This function is used to add an image to the stack
     void add(char* image_path);
     
+    //Function for generating a depth map from a focus stack processed with a focus measure
+    void create_depth_map();
+    
     //Function for determining the focus maximum of a pixel
     //using coarse depth esstimation method
-    inline float coarse_depth_esstimation(int y, int x);
+    inline float coarse_depth_esstimation(int y, int x, unsigned char** focus_map_stack_y_ptr);
     
     //Function for determing the focus maximum of a pixel
     //using guassian interpolation
@@ -58,9 +61,6 @@ public:
     //Mean depth interpolation calculations
     inline float depth_mean
     (float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm);
-
-    //Function for generating a depth map from a focus stack processed with a focus measure
-    void create_depth_map();
     
     //Function for generating an all in focus image
     void fuse_focus();
@@ -79,6 +79,7 @@ private:
     int height;
     int width;
     int size;
+    float threshold;
     string output_img_dir;
     vector<Mat> raw_stack;
     vector<Mat> focus_map_stack;

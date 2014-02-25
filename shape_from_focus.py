@@ -52,7 +52,7 @@ height, width = img.shape
 
 #Create a new image stack
 print('Creating image stack with dimensions', height, width)
-stack = Pyimage_stack(height, width, len(image_files), img_dir + output)
+stack = Pyimage_stack(height, width, len(image_files), 3000, img_dir + output)
 
 #Add image files
 start = time.time()
