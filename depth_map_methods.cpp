@@ -107,7 +107,8 @@ inline float image_stack::gaussian_depth_esstimation(int y, int x)
     float depth = depth_mean(max_focus, max_focus_plus, max_focus_minus, dm, dmp, dmm);
     
     if(max_focus > threshold && depth < size && depth >= 0){
-    	return depth;		
+    	//cout << depth << endl;
+    	return depth;
 	}
 	else
 	{
@@ -166,14 +167,20 @@ void image_stack::create_depth_map()
     focus_map_stack.clear();
     
     //Display the output image
-    depth_map.convertTo(dst, CV_8U, 255 / (raw_stack.size() - 1));
-    resize(dst, dst, Size(), 0.2, 0.2);
+    
+    dst = depth_map * (255.0 / (size - 1));
+    
+    dst.convertTo(dst, CV_8U);
+
+    //Save the image to file
+    cout << "Saving depth map to file" << endl;
+    imwrite( output_img_dir + "depth_map.jpg", dst);
+    
+    resize(dst, dst, Size(), 0.3, 0.3);
     namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     imshow("Depth Map", dst);
     
-    //Save the image to file
-    cout << "Saving depth map to file" << endl;
-    imwrite( output_img_dir + "depth_map.jpg", dst );
+
 }
 
 void image_stack::fuse_focus(){
@@ -188,7 +195,7 @@ void image_stack::fuse_focus(){
         Vec3b* focused_y_ptr = focused.ptr<Vec3b>(y);
         float* depth_map_y_ptr = depth_map.ptr<float>(y);
         
-        for(int i = 0; i < raw_stack.size(); i++){
+        for(int i = 0; i < size; i++){
         	raw_stack_y_ptr.push_back( raw_stack[i].ptr<Vec3b>(y) );
         }
         
@@ -270,7 +277,7 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point){
     init=clock();
     
     //Display the refocused image
-    resize(refocused, dst, Size(), 0.2, 0.2);
+    resize(refocused, dst, Size(), 0.3, 0.3);
     imshow("Fused Focus", dst);
     
     final = clock() - init;

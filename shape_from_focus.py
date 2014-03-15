@@ -24,8 +24,8 @@ output = 'output/'
 
 #Check if the folders have been created and images cropped #Need to improve this
 if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_cropped) and  not os.path.exists(img_dir + output) ):
-
-	image_files = os.listdir(img_dir)
+	
+	image_files = [image_file for image_file in os.listdir(img_dir) if image_file.endswith('.JPG')]
 	sort.sort_nicely(image_files)
 
 	print('Creating temporary directories...')
@@ -33,8 +33,8 @@ if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_
 	os.mkdir(img_dir + tmp_cropped)
 	os.mkdir(img_dir + output)
 
-	#align_image_stack_cmd = ["/Applications/Hugin.app/Contents/MacOS/align_image_stack", "-m", "-C", "-c", "4", "-a", img_dir + tmp_cropped]
-	align_image_stack_cmd = ["align_image_stack", "-m", "-l", "-C", "-c", "4", "-a", img_dir + tmp_cropped]
+	align_image_stack_cmd = ["/Applications/Hugin.app/Contents/MacOS/align_image_stack", "-m", "-C", "-c", "4", "-a", img_dir + tmp_cropped]
+	#align_image_stack_cmd = ["align_image_stack", "-m", "-l", "-C", "-c", "4", "-a", img_dir + tmp_cropped]
 
 	for file in image_files:
 		shutil.copyfile(img_dir + file, img_dir + tmp_copy + file)
