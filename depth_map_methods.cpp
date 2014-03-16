@@ -87,17 +87,15 @@ void image_stack::create_depth_map()
 // Sum Modified Laplacian focus measure
 jbutil::image<float>* sum_modified_laplacian::operator()(jbutil::image<float>& img){
      
-    cout << "Run SML algorithm " << endl;
-	cout << "Height " << ML->get_rows() << "," << ML->get_cols() << endl;
-	
+    cout << "Run SML algorithm " << endl;	
 	SML = new jbutil::image<float>(height, width);
 	
-    for(int y = step+1; y < height - step; y++)
+    for(int y = step; y < height - step; y++)
     {   
-        for(int x = step+1; x < width - step; x++)
+        for(int x = step; x < width - step; x++)
         {
 			//cout << "(" << y << ","  << x << ") = ";
-            (*ML)(0, y, x);
+            (*ML)(0, y, x)
             =
 			abs( 2 * img(0, y, x) - img(0, y, x - step) - img(0, y, x + step) )
 			+
@@ -105,11 +103,10 @@ jbutil::image<float>* sum_modified_laplacian::operator()(jbutil::image<float>& i
         }
     }
 	
-	cout << "Run Box filter " << endl;
-	
 	//Sum the area
+	cout << "Run Box filter " << endl;
     boxFilter((*ML), (*SML), step);
-    cout << "Run Box filter " << endl;
+    cout << "Finished running Box filter " << endl;
     
     return SML;
 }
@@ -124,15 +121,14 @@ jbutil::image<float>* sum_modified_laplacian::operator()(jbutil::image<float>& i
  */
 void boxFilter(const jbutil::image<float>& img, jbutil::image<float>& dst, int step){
 	
-	jbutil::image<float> y_filtered(img.get_rows(), img.get_cols());
-	
-	
+	jbutil::image<float> y_filtered(img.get_rows(), img.get_cols(), 1);
+		
 	//Loop over every pixel and sum in y direction
 	for(int y = step; y < img.get_rows() - step; y++){
 		for(int x = step; x < img.get_cols() -  step; x++){
 			//Apply the vertical box filter here
-			//y_filtered(0, y, x) = 0; //zero the image before adding
-			for(int y_offset = - step; y_offset <= step*2; y_offset++){
+			y_filtered(0, y, x) = 0; //zero the image before adding
+			for(int y_offset = - step; y_offset <= step; y_offset++){
 				y_filtered(0, y, x) += img(0,y + y_offset,x);
 			}
 		}
@@ -142,9 +138,9 @@ void boxFilter(const jbutil::image<float>& img, jbutil::image<float>& dst, int s
 	for(int y = step; y < img.get_rows() - step; y++){
 		for(int x = step; x < img.get_cols() -  step; x++){
 			//Apply the horizontal box filter here
-			//result(0, y, x) = 0; //zero the image before adding
-			for(int x_offset = - step; x_offset <= step*2; x_offset++){
-				dst(0, y, x) = y_filtered(0,y,x + x_offset);
+			dst(0, y, x) = 0; //zero the image before adding
+			for(int x_offset = - step; x_offset <= step; x_offset++){
+				dst(0, y, x) += y_filtered(0,y,x + x_offset);
 			}
 		}
 	}
