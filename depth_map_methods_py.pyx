@@ -1,4 +1,4 @@
-3#distutils: language = c++
+#distutils: language = c++
 #distutils: sources = depth_map_methods.cpp
 
 #Image stack class definition
@@ -7,8 +7,6 @@ cdef extern from "depth_map_methods.h":
 		image_stack(int, int, int, int, char*) except +
 		void add(char*)
 		void create_depth_map()
-		void fuse_focus()
-		void refocus(int, int)
 
 cdef class Pyimage_stack:
 	cdef image_stack *thisptr
@@ -20,7 +18,3 @@ cdef class Pyimage_stack:
 		self.thisptr.add(image_path)
 	def create_depth_map(self):
 		self.thisptr.create_depth_map()
-	def fuse_focus(self):
-		self.thisptr.fuse_focus()
-	def refocus(self, int depth_of_field, int depth_focus_point):
-		self.thisptr.refocus(depth_of_field, depth_focus_point)

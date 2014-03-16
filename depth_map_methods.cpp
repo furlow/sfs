@@ -15,8 +15,10 @@ image_stack::image_stack(int height,
 						size(size),
 						threshold(threshold),
 						output_img_dir(output_img_dir),
-						SML(height, width, 9),
-						depth_map(height, width){}
+						SML(height, width, 9)
+						{
+							depth_map = new jbutil::image<float>(height, width, 1);
+						}
     
 //This function is used to add an image to the stack
 void image_stack::add(char* image_path)
@@ -46,10 +48,10 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
     
     for(int z = 0; z < focus_map_stack.size(); z++)
     {
-        if( focus_map_stack[z](0,y,x) > max_focus)
+        if( (*focus_map_stack[z])(0,y,x) > max_focus)
         {
             max_focus_depth = z;
-            max_focus = focus_map_stack[z](0,y,x);
+            max_focus = (*focus_map_stack[z])(0,y,x);
         }
     }
     
@@ -70,7 +72,7 @@ void image_stack::create_depth_map()
     {        
         for(int x = 0; x < width; x++)
         {
-            depth_map( 0, y, x) = coarse_depth_esstimation(y, x);
+            (*depth_map)( 0, y, x) = coarse_depth_esstimation(y, x);
         }
     }
     
@@ -79,28 +81,34 @@ void image_stack::create_depth_map()
     
     //Save the image to file
     ofstream file_out( (output_img_dir + "depth_map.jpg").c_str());
-    depth_map.save(file_out);
+    depth_map->save(file_out);
 }
 
 // Sum Modified Laplacian focus measure
-jbutil::image<float> sum_modified_laplacian::operator()(jbutil::image<float>& img){
+jbutil::image<float>* sum_modified_laplacian::operator()(jbutil::image<float>& img){
      
     cout << "Run SML algorithm " << endl;
+	cout << "Height " << ML->get_rows() << "," << ML->get_cols() << endl;
 	
-    for(int y = step; y < height - step; y++)
+	SML = new jbutil::image<float>(height, width);
+	
+    for(int y = step+1; y < height - step; y++)
     {   
-        for(int x = step; x < width - step; x++)
+        for(int x = step+1; x < width - step; x++)
         {
-            ML(0, y, x)
+			//cout << "(" << y << ","  << x << ") = ";
+            (*ML)(0, y, x);
             =
-            abs( 2 * img(0, y, x) - img(0, y, x - step) - img(0, y, x + step) )
-            +
-            abs( 2 * img(0, y, x) - img(0, y - step, x) - img(0, y + step, x) );
+			abs( 2 * img(0, y, x) - img(0, y, x - step) - img(0, y, x + step) )
+			+
+			abs( 2 * img(0, y, x) - img(0, y - step, x) - img(0, y + step, x) );
         }
     }
 	
-	//TODO implement a box filter function
-    SML = boxFilter(ML, step);
+	cout << "Run Box filter " << endl;
+	
+	//Sum the area
+    boxFilter((*ML), (*SML), step);
     cout << "Run Box filter " << endl;
     
     return SML;
@@ -114,10 +122,10 @@ jbutil::image<float> sum_modified_laplacian::operator()(jbutil::image<float>& im
  * total of the average in each direction and just subtract 
  * the last value in the filter and add the new value.
  */
-jbutil::image<float> boxFilter(const jbutil::image<float>& img, int step){
+void boxFilter(const jbutil::image<float>& img, jbutil::image<float>& dst, int step){
 	
-	jbutil::image<float> y_filtered(img.get_cols(), img.get_rows()), 
-				 result(img.get_cols(), img.get_rows());
+	jbutil::image<float> y_filtered(img.get_rows(), img.get_cols());
+	
 	
 	//Loop over every pixel and sum in y direction
 	for(int y = step; y < img.get_rows() - step; y++){
@@ -136,10 +144,8 @@ jbutil::image<float> boxFilter(const jbutil::image<float>& img, int step){
 			//Apply the horizontal box filter here
 			//result(0, y, x) = 0; //zero the image before adding
 			for(int x_offset = - step; x_offset <= step*2; x_offset++){
-				result(0, y, x) = y_filtered(0,y,x + x_offset);
+				dst(0, y, x) = y_filtered(0,y,x + x_offset);
 			}
 		}
 	}
-	
-	return result;
 }

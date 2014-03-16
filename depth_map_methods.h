@@ -15,7 +15,7 @@ using namespace std;
  */
 class focus_measure{
 public:
-    virtual jbutil::image<float> operator()(jbutil::image<float>& img) = 0;
+    virtual jbutil::image<float>* operator()(jbutil::image<float>& img) = 0;
 };
 
 /* Sum Modified Laplacian focus measure
@@ -23,23 +23,25 @@ public:
 class sum_modified_laplacian: public focus_measure{
 public:
     sum_modified_laplacian
-    (int height, int width, int step):step(step), height(height), width(width), 
-	ML(height, width), SML(height, width){
+    (int height, int width, int step):step(step), height(height), width(width){
+		
+		ML = new jbutil::image<float>::image(height, width, 1);
+		
     }
-    jbutil::image<float> operator()(jbutil::image<float>& img);
+    jbutil::image<float>* operator()(jbutil::image<float>& img);
 private:
     int step;
     int height;
     int width;
-    jbutil::image<float> ML; //need to remove these when un needed
-    jbutil::image<float> SML;
+    jbutil::image<float>* ML; //need to remove these when un needed
+    jbutil::image<float>* SML;
 };
 
 
 /* boxFilter function for use in the Sum Modified Laplacian
  * focus measure filter
  */
-jbutil::image<float> boxFilter(const jbutil::image<float>& img, int step);
+void boxFilter(const jbutil::image<float>& img, jbutil::image<float>& dst, int step);
 
 
 /* This is the image stack class it is used to contain an image stack
@@ -65,7 +67,7 @@ private:
     int size;
     float threshold;
     string output_img_dir;
-    vector< jbutil::image<float> > focus_map_stack;
-    jbutil::image<float> depth_map;
+    vector< jbutil::image<float>* > focus_map_stack;
+    jbutil::image<float>* depth_map;
     sum_modified_laplacian SML;
 };

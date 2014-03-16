@@ -297,6 +297,9 @@ public:
    explicit image(int rows = 0, int cols = 0, int c = 0, int maxval = 255) :
       m_maxval(maxval)
       {
+	  std::cerr << "Called image Constructor" << std::endl;
+	  std::cerr << "Rows " << rows << std::endl;
+	  std::cerr << "Cols " << cols << std::endl;
       m_data.resize(c);
       for (int i = 0; i < c; i++)
          m_data(i).resize(rows, cols);
