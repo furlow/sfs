@@ -1,4 +1,4 @@
-3#distutils: language = c++
+#distutils: language = c++
 #distutils: sources = depth_map_methods.cpp
 
 #Image stack class definition

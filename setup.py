@@ -10,10 +10,11 @@ setup(
                 ext_modules=[
                               Extension('depth_map_methods_py',
                               sources = ["depth_map_methods_py.pyx", "depth_map_methods.cpp"],
-                              include_dirs=[".","/usr/local/include/opencv2", "/usr/local/include"],
-                              language="c++",
-                              library_dirs=['/usr/local/lib'],
-                              libraries=['opencv_core', 'opencv_highgui', 'opencv_imgproc'])
+                              include_dirs = [".","/usr/local/include/opencv2", "/usr/local/include"],
+                              language = "c++",
+                              library_dirs = ['/usr/local/lib'],
+                              libraries = ['opencv_core', 'opencv_highgui', 'opencv_imgproc'],
+                              extra_compile_args = ['-Wno-error=unused-command-line-argument-hard-error-in-future'])
                              ],
       cmdclass = {'build_ext': build_ext},
 )

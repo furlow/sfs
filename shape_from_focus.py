@@ -24,7 +24,7 @@ output = 'output/'
 
 #Check if the folders have been created and images cropped #Need to improve this
 if( not os.path.exists(img_dir + tmp_copy) and not os.path.exists(img_dir + tmp_cropped) and  not os.path.exists(img_dir + output) ):
-	
+
 	image_files = [image_file for image_file in os.listdir(img_dir) if image_file.endswith('.JPG')]
 	sort.sort_nicely(image_files)
 

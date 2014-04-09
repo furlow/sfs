@@ -20,17 +20,19 @@ public:
 
 /* Sum Modified Laplacian focus measure
  */
-class sum_modified_laplacian: public focus_measure{
-public:
+class sum_modified_laplacian: public focus_measure
+{
+  public:
     sum_modified_laplacian
-    (int height, int width, int step):step(step), height(height), width(width){
-    
+    (int height, int width, int step):step(step), height(height), width(width)
+    {
+
         ML = Mat(height, width, CV_32F);
         SML = Mat(height, width, CV_32F);
-    
     }
+
     Mat operator()(Mat& image);
-private:
+  private:
     int step;
     int height;
     int width;
@@ -43,38 +45,38 @@ class image_stack{
 public:
     //Constructor
     image_stack(int height, int width, int size, int threshold ,char* output_img_dir);
-    
+
     //This function is used to add an image to the stack
     void add(char* image_path);
-    
+
     //Function for generating a depth map from a focus stack processed with a focus measure
     void create_depth_map();
-    
+
     //Function for determining the focus maximum of a pixel
     //using coarse depth esstimation method
     inline float coarse_depth_esstimation(int y, int x);
-    
+
     //Function for determing the focus maximum of a pixel
     //using guassian interpolation
     inline float gaussian_depth_esstimation(int y, int x);
-    
+
     //Mean depth interpolation calculations
     inline float depth_mean
     (float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm);
-    
+
     //Function for generating an all in focus image
     void fuse_focus();
-    
+
     //Function for artificially refocusing an image
     void refocus(int depth_of_feild, int depth_focus_point);
-    
+
     //Function for generating blurred images for use in the refocus algorithm
     void generate_blurred_images();
 
-    
+
     //Function used to apply boxfilter blur to a single pixel
     inline void boxfilter_single_pixel(int y, int x, int ksize);
-    
+
 private:
     int height;
     int width;
