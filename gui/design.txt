@@ -1,0 +1,19 @@
+GUI design requirements
+=======================
+
+Features
+========
+
+- Display of the refocused image
+- Point and click focus
+- Loading/Processing bar
+- Loading/Processing time estimation
+- Export of image
+- Validation of software generated input images
+- Diff of depth maps and fused focused images
+- Validation of fused focused and refocused images
+
+Additional Features
+===================
+
+- Measurement tools / export to point cloud
