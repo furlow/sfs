@@ -3,7 +3,7 @@
 #include <cmath>
 #include <exception>
 #include <vector>
-//#include <QPixmap>
+#include "imgconv.h"
 
 using namespace std;
 
@@ -182,8 +182,6 @@ void image_stack::create_depth_map()
     resize(dst, dst, Size(), 0.3, 0.3);
     namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     imshow("Depth Map", dst);
-
-
 }
 
 void image_stack::fuse_focus(char* out_img){
@@ -226,8 +224,7 @@ void image_stack::fuse_focus(char* out_img){
     cout << "Saving fused image to file" << endl;
     imwrite( output_img_dir + "fused_focus.jpg", focused );
 
-    mat2numpy(out_img, focused);
-
+    imgconv::mat2numpy(out_img, focused);
 }
 
 void image_stack::generate_blurred_images(){
@@ -292,7 +289,7 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
     //Save the refocused image to file
     //cout << "Saving fused image to file" << endl;
     //imwrite( output_img_dir + "refocused.jpg", refocused );
-    mat2numpy(out_img, refocused);
+    imgconv::mat2numpy(out_img, refocused);
 }
 
 //This function is most likely obsolete
@@ -376,22 +373,4 @@ Mat sum_modified_laplacian::operator()(Mat& image){
     cout << "Run Box filter " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 
     return SML;
-}
-
-void mat2numpy(char* numpy_img, Mat& mat_img){
-
-    for(int y = 0; y < mat_img.rows; y++){
-
-        char* numpy_row_ptr = numpy_img + ( y * mat_img.cols * 3 );
-        Vec3b* mat_row_ptr = mat_img.ptr<Vec3b>(y);
-
-        for(int x = 0; x < mat_img.cols; x++){
-
-            for(int c = 0; c < 3; c++){
-
-                numpy_row_ptr[x + c] = mat_row_ptr[x].val[c];
-
-            }
-        }
-    }
 }

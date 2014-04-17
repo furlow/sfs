@@ -92,6 +92,3 @@ private:
     Mat depth_map;
     Mat dst; //temporary storage of an array
 };
-
-//Function to convert a Mat to copy/convert to a numpy array
-void mat2numpy(char* numpy_img, const Mat& mat_img);

@@ -35,9 +35,9 @@ cdef class Pyimage_stack:
 		self.thisptr.create_depth_map()
 	def fuse_focus(self): #, np.ndarray[char, mode="c"] fuse_focused_image):
 		fuse_focused_image = np.zeros((self.height, self.width, 3), dtype = DTYPE, order = 'C')
-		self.thisptr.fuse_focus(fuse_focused_image)
+		self.thisptr.fuse_focus(fuse_focused_image[0])
 		return fuse_focused_image
 	def refocus(self, int depth_of_field, int depth_focus_point): #, np.ndarray[char, mode="c"] refocused_image):
 		refocused_image = np.zeros((self.height, self.width, 3), dtype = DTYPE, order = 'C')
-		self.thisptr.refocus(depth_of_field, depth_focus_point, refocused_image)
+		self.thisptr.refocus(depth_of_field, depth_focus_point, refocused_image[0])
 		return refocused_image

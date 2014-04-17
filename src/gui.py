@@ -49,7 +49,7 @@ class Program(QDialog):
 def main():
     sys.argv[0] = "Shape From Focus"
     img_dir = sys.argv[1]
-    process_stack(img_dir)
+    stack  = process_stack(img_dir)
     app = QApplication(sys.argv)
     form = Program()
     form.show()
