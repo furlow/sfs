@@ -178,9 +178,9 @@ void image_stack::create_depth_map()
     cout << "Saving depth map to file" << endl;
     imwrite( output_img_dir + "depth_map.jpg", dst);
 
-    resize(dst, dst, Size(), 0.3, 0.3);
-    namedWindow( "Depth Map", WINDOW_AUTOSIZE );
-    imshow("Depth Map", dst);
+    //resize(dst, dst, Size(), 0.3, 0.3);
+    //namedWindow( "Depth Map", WINDOW_AUTOSIZE );
+    //imshow("Depth Map", dst);
 }
 
 void image_stack::fuse_focus(char* out_img){
@@ -215,9 +215,9 @@ void image_stack::fuse_focus(char* out_img){
     raw_stack.clear();
 
     //Display the fused focus image
-    resize(focused, dst, Size(), 0.2, 0.2);
-    namedWindow( "Fused Focus", WINDOW_AUTOSIZE );
-    imshow("Fused Focus", dst);
+    //resize(focused, dst, Size(), 0.2, 0.2);
+    //namedWindow( "Fused Focus", WINDOW_AUTOSIZE );
+    //imshow("Fused Focus", dst);
 
     //Save the fused focus image to file
     cout << "Saving fused image to file" << endl;
@@ -276,14 +276,14 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
     final = clock() - init;
     cout << "Refocus image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 
-    init=clock();
+    //init=clock();
 
     //Display the refocused image
-    resize(refocused, dst, Size(), 0.3, 0.3);
-    imshow("Fused Focus", dst);
+    //resize(refocused, dst, Size(), 0.3, 0.3);
+    //imshow("Fused Focus", dst);
 
-    final = clock() - init;
-    cout << "Displaying image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    //final = clock() - init;
+    //cout << "Displaying image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 
     //Save the refocused image to file
     //cout << "Saving fused image to file" << endl;
@@ -374,7 +374,6 @@ Mat sum_modified_laplacian::operator()(Mat& image){
     return SML;
 }
 
-
 void imgconv::mat2numpy(char* numpy_img, Mat& mat_img){
 
     for(int y = 0; y < mat_img.rows; y++){
@@ -383,8 +382,11 @@ void imgconv::mat2numpy(char* numpy_img, Mat& mat_img){
         Vec3b* mat_row_ptr = mat_img.ptr<Vec3b>(y);
 
         for(int x = 0; x < mat_img.cols; x++){
+
+            char* numpy_chan_ptr = numpy_row_ptr + (x * 3);
+
             for(int c = 0; c < 3; c++){
-                numpy_row_ptr[x * 3 + c] = mat_row_ptr[x].val[c];
+                numpy_chan_ptr[c] = mat_row_ptr[x].val[2 - c];
             }
         }
     }

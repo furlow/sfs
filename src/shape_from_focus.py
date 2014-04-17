@@ -84,10 +84,12 @@ def process_stack(img_dir):
     start = time.time()
     print('Generating fuse focus image')
     fused_image = stack.fuse_focus()
-    plt.imshow(fused_image)
     finish = time.time()
     print 'Execution time =', finish - start
-    time.sleep(200)
+
+    plt.imshow(fused_image)
+    plt.show()
+
     return stack
 
 def main():

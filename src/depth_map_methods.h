@@ -73,7 +73,6 @@ public:
     //Function for generating blurred images for use in the refocus algorithm
     void generate_blurred_images();
 
-
     //Function used to apply boxfilter blur to a single pixel
     inline void boxfilter_single_pixel(int y, int x, int ksize);
 
