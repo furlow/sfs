@@ -3,6 +3,9 @@
 #include <cmath>
 #include <exception>
 #include <vector>
+//#include <QPixmap>
+
+using namespace std;
 
 //image stack constructor
 image_stack::image_stack(int height, int width, int size, int threshold, char* output_img_dir):
@@ -67,7 +70,8 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
         }
     }
 
-    if(max_focus > threshold){
+    if(max_focus > threshold)
+    {
 		return max_focus_depth;
 	}
 	else
@@ -117,7 +121,7 @@ inline float image_stack::gaussian_depth_esstimation(int y, int x)
 }
 
 
-inline float image_stack::depth_mean
+/*inline float image_stack::depth_mean
 (float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm)
 {
     float log_Fm = log(Fm);
@@ -136,7 +140,7 @@ inline float image_stack::depth_mean
                  ( 2 * (log_fm_minus_fmm + log_fm_minus_fmp) );
 
     return d_mean;
-}
+}*/
 
 //Function for generating a depth map
 void image_stack::create_depth_map()
@@ -183,7 +187,7 @@ void image_stack::create_depth_map()
 
 }
 
-void image_stack::fuse_focus(){
+void image_stack::fuse_focus(char* out_img){
 
     Vector<Vec3b*> raw_stack_y_ptr;
 
@@ -222,6 +226,9 @@ void image_stack::fuse_focus(){
     //Save the fused focus image to file
     cout << "Saving fused image to file" << endl;
     imwrite( output_img_dir + "fused_focus.jpg", focused );
+
+    mat2numpy(out_img, focused);
+
 }
 
 void image_stack::generate_blurred_images(){
@@ -241,8 +248,8 @@ void image_stack::generate_blurred_images(){
 
 }
 
-//function used to artificially refocus an image
-void image_stack::refocus(int depth_of_field, int depth_focus_point){
+//Function used to artificially refocus an image
+void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_img){
 
 	clock_t init, final;
     init=clock();
@@ -251,7 +258,7 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point){
 
     Vec3b* blurred_stack_y_ptr[size];
 
-    //for loop which seVelects the correct pixels based on the depth map value
+    //for loop which selects the correct pixels based on the depth map value
     for(int y = 0; y < height; y++)
     {
 
@@ -286,8 +293,7 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point){
     //Save the refocused image to file
     //cout << "Saving fused image to file" << endl;
     //imwrite( output_img_dir + "refocused.jpg", refocused );
-
-
+    mat2numpy(out_img, refocused);
 }
 
 //This function is most likely obsolete
@@ -371,4 +377,22 @@ Mat sum_modified_laplacian::operator()(Mat& image){
     cout << "Run Box filter " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 
     return SML;
+}
+
+void mat2numpy(char* numpy_img, Mat& mat_img){
+
+    for(int y = 0; y < mat_img.rows; y++){
+
+        char* numpy_row_ptr = numpy_img + ( y * mat_img.cols * 3 );
+        Vec3b* mat_row_ptr = mat_img.ptr<Vec3b>(y);
+
+        for(int x = 0; x < mat_img.cols; x++){
+
+            for(int c = 0; c < 3; c++){
+
+                numpy_row_ptr[x + c] = mat_row_ptr[x].val[c];
+
+            }
+        }
+    }
 }

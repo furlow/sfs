@@ -65,10 +65,10 @@ public:
     (float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm);
 
     //Function for generating an all in focus image
-    void fuse_focus();
+    void fuse_focus(char* out_img);
 
     //Function for artificially refocusing an image
-    void refocus(int depth_of_feild, int depth_focus_point);
+    void refocus(int depth_of_feild, int depth_focus_point, char* out_img);
 
     //Function for generating blurred images for use in the refocus algorithm
     void generate_blurred_images();
@@ -92,3 +92,6 @@ private:
     Mat depth_map;
     Mat dst; //temporary storage of an array
 };
+
+//Function to convert a Mat to copy/convert to a numpy array
+void mat2numpy(char* numpy_img, const Mat& mat_img);
