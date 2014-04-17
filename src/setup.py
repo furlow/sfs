@@ -10,7 +10,7 @@ setup(
       # The ext modules interface the cpp code with the python one:
                 ext_modules=[
                               Extension('depth_map_methods_py',
-                              sources = ["depth_map_methods_py.pyx", "depth_map_methods.cpp", "imgconv.cpp"],
+                              sources = ["depth_map_methods_py.pyx", "depth_map_methods.cpp"],
                               include_dirs = [".","/usr/local/include/opencv2", "/usr/local/include", numpy.get_include()],
                               language = "c++",
                               library_dirs = ['/usr/local/lib'],
