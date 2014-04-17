@@ -17,46 +17,16 @@
   <component name="DaemonCodeAnalyzer">
     <disable_hints />
   </component>
-  <component name="DockManager">
-    <window id="1">
-      <content type="file-editors">
-        <state>
-          <leaf>
-            <file leaf-file-name="gui.py" pinned="false" current="false" current-in-tab="false">
-              <entry file="file://$PROJECT_DIR$/../src/gui.py">
-                <provider selected="true" editor-type-id="text-editor">
-                  <state line="13" column="36" selection-start="360" selection-end="367" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="960">
-                    <folding>
-                      <element signature="e#18#28#0" expanded="true" />
-                    </folding>
-                  </state>
-                </provider>
-              </entry>
-            </file>
-            <file leaf-file-name="depth_map_methods_py.pyx" pinned="false" current="true" current-in-tab="true">
-              <entry file="file://$PROJECT_DIR$/../src/depth_map_methods_py.pyx">
-                <provider selected="true" editor-type-id="text-editor">
-                  <state line="3" column="16" selection-start="106" selection-end="106" vertical-scroll-proportion="0.05905512" vertical-offset="0" max-vertical-offset="762">
-                    <folding />
-                  </state>
-                </provider>
-              </entry>
-            </file>
-          </leaf>
-        </state>
-      </content>
-    </window>
-  </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FavoritesManager">
     <favorites_list name="gui" />
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="shape_from_focus.py" pinned="false" current="false" current-in-tab="true">
+      <file leaf-file-name="shape_from_focus.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../src/shape_from_focus.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="50" column="62" selection-start="1690" selection-end="1690" vertical-scroll-proportion="0.9816754" vertical-offset="0" max-vertical-offset="1335">
+            <state line="38" column="20" selection-start="1224" selection-end="1224" vertical-scroll-proportion="0.64790577" vertical-offset="75" max-vertical-offset="1560">
               <folding>
                 <element signature="e#48#58#0" expanded="true" />
               </folding>
@@ -156,7 +126,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="recentsLimit" value="5" />
-    <property name="options.lastSelected" value="appearance" />
+    <property name="options.lastSelected" value="editor.preferences.completion" />
     <property name="options.splitter.main.proportions" value="0.3" />
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
@@ -456,15 +426,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../src/shape_from_focus.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="50" column="62" selection-start="1690" selection-end="1690" vertical-scroll-proportion="0.9816754" vertical-offset="0" max-vertical-offset="1335">
-          <folding>
-            <element signature="e#48#58#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../src/gui.py">
       <provider selected="true" editor-type-id="text-editor">
         <state line="13" column="36" selection-start="360" selection-end="367" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="960">
@@ -476,8 +437,17 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../src/depth_map_methods_py.pyx">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="3" column="16" selection-start="106" selection-end="106" vertical-scroll-proportion="0.05905512" vertical-offset="0" max-vertical-offset="762">
+        <state line="38" column="34" selection-start="1333" selection-end="1333" vertical-scroll-proportion="0.7440945" vertical-offset="3" max-vertical-offset="765">
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../src/shape_from_focus.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="38" column="20" selection-start="1224" selection-end="1224" vertical-scroll-proportion="0.64790577" vertical-offset="75" max-vertical-offset="1560">
+          <folding>
+            <element signature="e#48#58#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

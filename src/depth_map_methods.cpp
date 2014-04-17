@@ -383,11 +383,8 @@ void imgconv::mat2numpy(char* numpy_img, Mat& mat_img){
         Vec3b* mat_row_ptr = mat_img.ptr<Vec3b>(y);
 
         for(int x = 0; x < mat_img.cols; x++){
-
             for(int c = 0; c < 3; c++){
-
-                numpy_row_ptr[x + c] = mat_row_ptr[x].val[c];
-
+                numpy_row_ptr[x * 3 + c] = mat_row_ptr[x].val[c];
             }
         }
     }
