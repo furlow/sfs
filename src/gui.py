@@ -4,24 +4,29 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from shape_from_focus import process_stack
 import cv2
+import numpy2qimage
 
 __appname__ = "Shape From Focus Refocus"
 
 class refocused_image(QLabel):
     def __init__(self, stack, parent = None):
-        super(refocused_image, self).__init__(parent)
+        QLabel.__init__(self)
 
         self.stack = stack
 
         #Set up the image pixmap
         self.refocused_pixmap = numpy2qpixmap( self.stack.focused_image )
-        self.setPixmap(self.refocused_pixmap)
+        self.setPixmap(self.refocused_pixmap.scaled(200, 200, Qt.KeepAspectRatio))
+        self.setScaledContents(False)
+        self.setMinimumSize(100, 100)
 
     def mousePressEvent(self, QMouseEvent):
         self.pos = QMouseEvent.pos()
         type(self.pos)
         print self.pos
 
+    def resizeEvent(self, QResizeEvent):
+        self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
 
 class Program(QDialog):
     def __init__(self, stack, parent = None):
@@ -54,13 +59,12 @@ class Program(QDialog):
         self.setLayout(layout)
 
 def numpy2qpixmap(cvBGRImg):
-
     #convert from BGR to RGB
-    cvRGBImg = cv2.cvtColor(cvBGRImg, cv2.CV_BGR2RGB)
+    #cvBGRImg = cv2.cvtColor(cvBGRImg, cv2.cv.CV_BGR2RGB)
 
     #convert numpy to pixmap image
-    qimg = QtGui.QImage(cvRGBImg.data,cvRGBImg.shape[1], cvRGBImg.shape[0], QtGui.QImage.Format_RGB888)
-    Qpixmap_Img = QtGui.QPixmap.fromImage(qimg)
+    qimg = numpy2qimage.toQImage(cvBGRImg)
+    Qpixmap_Img = QPixmap.fromImage(qimg)
 
     return Qpixmap_Img
 

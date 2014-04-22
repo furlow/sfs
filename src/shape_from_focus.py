@@ -87,9 +87,6 @@ def process_stack(img_dir):
     finish = time.time()
     print 'Execution time =', finish - start
 
-    plt.imshow(fused_image)
-    plt.show()
-
     return stack
 
 def main():
