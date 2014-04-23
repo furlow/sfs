@@ -141,7 +141,7 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
 }*/
 
 //Function for generating a depth map
-void image_stack::create_depth_map()
+void image_stack::create_depth_map(char* out_img)
 {
     /*
     for(int z = 0; z < stack.size(); z++)
@@ -168,11 +168,9 @@ void image_stack::create_depth_map()
     //Clear out the focus map stack as the data is no longer needed
     focus_map_stack.clear();
 
-    //Display the output image
-
-    dst = depth_map * (255.0 / (size - 1));
-
-    dst.convertTo(dst, CV_8U);
+    //Scale the depth range from 0 to 255
+    dst = depth_map;
+    dst.convertTo(depth_map, CV_8U);
 
     //Save the image to file
     cout << "Saving depth map to file" << endl;
@@ -181,6 +179,8 @@ void image_stack::create_depth_map()
     //resize(dst, dst, Size(), 0.3, 0.3);
     //namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     //imshow("Depth Map", dst);
+
+    imgconv::matgray2numpy(out_img, dst);
 }
 
 void image_stack::fuse_focus(char* out_img){
@@ -388,6 +388,20 @@ void imgconv::mat2numpy(char* numpy_img, Mat& mat_img){
             for(int c = 0; c < 3; c++){
                 numpy_chan_ptr[c] = mat_row_ptr[x].val[2 - c];
             }
+        }
+    }
+}
+
+void imgconv::matgray2numpy(char* numpy_img, Mat& mat_img){
+
+    for(int y = 0; y < mat_img.rows; y++){
+
+        char* numpy_row_ptr = numpy_img + ( y * mat_img.cols );
+        char* mat_row_ptr = mat_img.ptr<char>(y);
+
+        for(int x = 0; x < mat_img.cols; x++){
+
+            numpy_row_ptr[x] = mat_row_ptr[x];
         }
     }
 }

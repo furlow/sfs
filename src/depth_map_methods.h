@@ -50,7 +50,7 @@ public:
     void add(char* image_path);
 
     //Function for generating a depth map from a focus stack processed with a focus measure
-    void create_depth_map();
+    void create_depth_map(char* out_img);
 
     //Function for determining the focus maximum of a pixel
     //using coarse depth esstimation method
@@ -95,4 +95,6 @@ private:
 namespace imgconv{
     //Function to convert a Mat to copy/convert to a numpy array
     void mat2numpy(char* numpy_img, Mat& mat_img);
+    void matgray2numpy(char* numpy_img, Mat& mat_img);
+
 }
