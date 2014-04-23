@@ -170,7 +170,7 @@ void image_stack::create_depth_map(char* out_img)
 
     //Scale the depth range from 0 to 255
     dst = depth_map;
-    dst.convertTo(depth_map, CV_8U);
+    dst.convertTo(dst, CV_8U);
 
     //Save the image to file
     cout << "Saving depth map to file" << endl;
@@ -402,6 +402,7 @@ void imgconv::matgray2numpy(char* numpy_img, Mat& mat_img){
         for(int x = 0; x < mat_img.cols; x++){
 
             numpy_row_ptr[x] = mat_row_ptr[x];
+            //cout << numpy_row_ptr[x] << endl;
         }
     }
 }

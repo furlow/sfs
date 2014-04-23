@@ -28,7 +28,7 @@ class refocused_image(QLabel):
         x_point = self.x_scale * pos.x()
         y_point = self.y_scale * pos.y()
         self.stack.refocus_by_point(x_point, y_point)
-        self.refocused_pixmap = numpy2qpixmap( self.stack.refocused_image )
+        self.refocused_pixmap = numpy2qpixmap( self.stack.refocused_image     )
         self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
 
     def resizeEvent(self, QResizeEvent):
