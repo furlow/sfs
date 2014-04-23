@@ -75,8 +75,7 @@ def process_stack(img_dir):
     # TODO Move this into the c++ code
     start = time.time()
     print('Generating Depth map...')
-    plt.imshow(stack.create_depth_map())
-    plt.show()
+    stack.create_depth_map()
     finish = time.time()
     print 'Execution time =', finish - start
 

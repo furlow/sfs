@@ -22,19 +22,27 @@ class refocused_image(QLabel):
         self.setScaledContents(False)
         self.setMinimumSize(100, 100)
 
-    def mousePressEvent(self, QMouseEvent):
+    def refocus(self, QMouseEvent):
         pos = QMouseEvent.pos()
         print pos
         x_point = self.x_scale * pos.x()
         y_point = self.y_scale * pos.y()
-        self.stack.refocus_by_point(x_point, y_point)
+        print x_point, y_point
+        self.stack.refocus_by_point(y_point, x_point)
         self.refocused_pixmap = numpy2qpixmap( self.stack.refocused_image     )
         self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
 
+    def mousePressEvent(self, QMouseEvent):
+        self.refocus(QMouseEvent)
+
+    def mouseMoveEvent(self, QMouseEvent):
+        self.refocus(QMouseEvent)
+
     def resizeEvent(self, QResizeEvent):
         self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
-        self.x_scale = self.stack.width / QResizeEvent.size().width()
-        self.y_scale = self.stack.height / QResizeEvent.size().height()
+        self.x_scale = self.stack.width /  float( QResizeEvent.size().width() )
+        self.y_scale = self.stack.height / float( QResizeEvent.size().height() )
+        print self.x_scale, self.y_scale
 
 class Program(QDialog):
     def __init__(self, stack, parent = None):
