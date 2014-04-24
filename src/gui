@@ -20,7 +20,7 @@ class refocused_image(QLabel):
         self.refocused_pixmap = numpy2qpixmap( self.stack.focused_image )
         self.setPixmap(self.refocused_pixmap.scaled(200, 200, Qt.KeepAspectRatio))
         self.setScaledContents(False)
-        self.setMinimumSize(200, 200)
+        self.setMinimumSize(300, 200)
 
     def refocus(self, QMouseEvent):
         pos = QMouseEvent.pos()
@@ -29,7 +29,7 @@ class refocused_image(QLabel):
         y_point = self.y_scale * pos.y()
         print x_point, y_point
         self.stack.refocus_by_point(y_point, x_point)
-        self.refocused_pixmap = numpy2qpixmap( self.stack.refocused_image     )
+        self.refocused_pixmap = numpy2qpixmap(self.stack.refocused_image)
         self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
 
     def mousePressEvent(self, QMouseEvent):

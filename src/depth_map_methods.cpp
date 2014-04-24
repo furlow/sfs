@@ -10,17 +10,20 @@ using namespace std;
 image_stack::image_stack(int height, int width, int size, int threshold, char* output_img_dir):
 height(height), width(width), size(size), threshold(threshold) , output_img_dir(output_img_dir), SML(height, width, 9)
 {
-    depth_map = Mat(height, width, CV_32F);
+    depth_map = Mat(height, width, CV_8U);
     focused = Mat(height, width, CV_8UC3);
     refocused = Mat(height, width, CV_8UC3);
 }
 
 //For loading already computed depth map and fused image
-void image_stack::load(void)
+void image_stack::load(char* numpy_depth_map, char* numpy_focused)
 {
-    depth_map = imread(output_img_dir + "depth_map.png");
-    depth_map.convertTo(depth_map, CV_32F);
-    focused = imread(output_img_dir + "fused_focus.png");
+    depth_map = imread(output_img_dir + "depth_map.tiff");
+    imgconv::matgray2numpy(numpy_depth_map, depth_map);
+
+    focused = imread(output_img_dir + "fused_focus.tiff");
+    focused.convertTo(focused, CV_8UC3);
+    imgconv::mat2numpy(numpy_focused, focused);
 }
 
 //This function is used to add an image to the stack
@@ -165,7 +168,7 @@ void image_stack::create_depth_map(char* out_img)
     for(int y = 0; y < height; y++)
     {
 
-        float* y_ptr = depth_map.ptr<float>(y);
+        char* y_ptr = depth_map.ptr<char>(y);
 
         for(int x = 0; x < width; x++)
         {
@@ -177,18 +180,17 @@ void image_stack::create_depth_map(char* out_img)
     focus_map_stack.clear();
 
     //Scale the depth range from 0 to 255
-    dst = depth_map;
-    dst.convertTo(dst, CV_8U);
+    depth_map = depth_map * (255 / (size - 1));
 
     //Save the image to file
     cout << "Saving depth map to file" << endl;
-    imwrite( output_img_dir + "depth_map.png", dst);
+    imwrite( output_img_dir + "depth_map.tiff", depth_map);
 
     //resize(dst, dst, Size(), 0.2, 0.2);
     //namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     //imshow("Depth Map", dst);
 
-    imgconv::matgray2numpy(out_img, dst);
+    imgconv::matgray2numpy(out_img, depth_map);
 }
 
 void image_stack::fuse_focus(char* out_img){
@@ -201,7 +203,7 @@ void image_stack::fuse_focus(char* out_img){
     {
 
         Vec3b* focused_y_ptr = focused.ptr<Vec3b>(y);
-        float* depth_map_y_ptr = depth_map.ptr<float>(y);
+        char* depth_map_y_ptr = depth_map.ptr<char>(y);
 
         for(int i = 0; i < size; i++){
         	raw_stack_y_ptr.push_back( raw_stack[i].ptr<Vec3b>(y) );
@@ -229,7 +231,7 @@ void image_stack::fuse_focus(char* out_img){
 
     //Save the fused focus image to file
     cout << "Saving fused image to file" << endl;
-    imwrite( output_img_dir + "fused_focus.png", focused );
+    imwrite( output_img_dir + "fused_focus.tiff", focused);
 
     imgconv::mat2numpy(out_img, focused);
 }
@@ -247,7 +249,7 @@ void image_stack::generate_blurred_images(){
     }
 
 	final = clock() - init;
-    cout << "blur images" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    cout << "blured images " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 
 }
 
@@ -266,9 +268,10 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
     {
 
         Vec3b* refocused_y_ptr = refocused.ptr<Vec3b>(y);
-        float* depth_map_y_ptr = depth_map.ptr<float>(y);
+        char* depth_map_y_ptr = depth_map.ptr<char>(y);
 
-        for(int i = 0; i < size; i++){
+        for(int i = 0; i < size; i++)
+        {
         	blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
         }
 
@@ -277,7 +280,6 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
         for(int x = 0; x < width; x++)
         {
             refocused_y_ptr[x] = blurred_stack_y_ptr[ abs(int(depth_map_y_ptr[x]) - depth_focus_point) ][x];
-
         }
     }
 

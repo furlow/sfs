@@ -15,7 +15,7 @@ ctypedef np.uint8_t DTYPE_t
 cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
 		image_stack(int, int, int, int, char*) except +
-		void load()
+		void load(char*, char*)
 		void add(char*)
 		void create_depth_map(char*)
 		void fuse_focus(char*)
@@ -29,34 +29,45 @@ cdef class Pyimage_stack:
 	cdef public np.ndarray focused_image
 	cdef public np.ndarray refocused_image
 	cdef public np.ndarray depth_map
+
 	def __cinit__(self, int height, int width, int size, int threshold, char* output_img_dir):
 		self.thisptr = new image_stack(height, width, size, threshold, output_img_dir)
 		self.height = height
 		self.width = width
+
 	def __dealloc__(self):
 		del self.thisptr
+
 	def load(self):
-		self.thisptr.load()
+		cdef np.ndarray[char, ndim=2, mode="c"] depth_map_local
+		cdef np.ndarray[char, ndim=3, mode="c"] focused_image_local
+		depth_map_local = np.zeros((self.height, self.width), dtype = DTYPE, order = 'c')
+		focused_image_local = np.zeros((self.height, self.width, 3), dtype = DTYPE, order = 'c')
+		self.thisptr.load(&depth_map_local.data[0], &focused_image_local.data[0])
+		self.focused_image = focused_image_local
+		self.depth_map = depth_map_local
+
 	def add(self, char* image_path):
 		self.thisptr.add(image_path)
+
 	def create_depth_map(self):
 		cdef np.ndarray[char, ndim=2, mode="c"] depth_map_local
 		depth_map_local = np.zeros((self.height, self.width), dtype = DTYPE, order = 'c')
 		self.thisptr.create_depth_map( &depth_map_local.data[0] )
 		self.depth_map = depth_map_local
-		return depth_map_local
+
 	def fuse_focus(self):
 		cdef np.ndarray[char, ndim=3, mode="c"] focused_image_local
 		focused_image_local = np.zeros((self.height, self.width, 3), dtype = DTYPE, order = 'c')
 		self.thisptr.fuse_focus( &focused_image_local.data[0] )
 		self.focused_image = focused_image_local
-		return focused_image_local
+
 	def refocus(self, int depth_of_field, int depth_focus_point):
 		cdef np.ndarray[char, ndim=3, mode="c"] refocused_image_local
 		refocused_image_local = np.zeros((self.height, self.width, 3), dtype = DTYPE, order = 'c')
 		self.thisptr.refocus(depth_of_field, depth_focus_point, &refocused_image_local.data[0] )
 		self.refocused_image = refocused_image_local
-		return refocused_image_local
+
 	def refocus_by_point(self, int y, int x):
 		depth = self.depth_map[y, x]
 		print depth
