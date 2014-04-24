@@ -62,8 +62,8 @@ def process_stack(img_dir):
     #the height and width of the image stack from within the Pyimage_stack
     #place the check in the constructor in the c++ or the cython code
     print('Creating image stack with dimensions', height, width)
-    if os.path.exists(img_dir + output + 'depth_map.tiff') \
-    and os.path.exists(img_dir + output + 'fused_focus.tiff'):
+    if os.path.exists(img_dir + output + 'depth_map.png') \
+    and os.path.exists(img_dir + output + 'fused_focus.png'):
         # Load pre computed files
         stack.load()
     else:
@@ -83,8 +83,6 @@ def process_stack(img_dir):
         stack.create_depth_map()
         finish = time.time()
         print 'Generate depth map time =', finish - start
-        plt.imshow(stack.depth_map)
-        plt.show()
 
         # Generate an all in focus image
         # TODO Move this into the c++ code

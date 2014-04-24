@@ -1,6 +1,7 @@
 #distutils: language = c++
 #distutils: sources = depth_map_methods.cpp
 import numpy as np
+import matplotlib.pylab as plt
 cimport numpy as np
 # We now need to fix a datatype for our arrays. I've used the variable
 # DTYPE for this, which is assigned to the usual NumPy runtime

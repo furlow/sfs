@@ -18,11 +18,10 @@ height(height), width(width), size(size), threshold(threshold) , output_img_dir(
 //For loading already computed depth map and fused image
 void image_stack::load(char* numpy_depth_map, char* numpy_focused)
 {
-    depth_map = imread(output_img_dir + "depth_map.tiff");
+    depth_map = imread(output_img_dir + "depth_map.png", CV_LOAD_IMAGE_GRAYSCALE);
     imgconv::matgray2numpy(numpy_depth_map, depth_map);
 
-    focused = imread(output_img_dir + "fused_focus.tiff");
-    focused.convertTo(focused, CV_8UC3);
+    focused = imread(output_img_dir + "fused_focus.png");
     imgconv::mat2numpy(numpy_focused, focused);
 }
 
@@ -180,11 +179,11 @@ void image_stack::create_depth_map(char* out_img)
     focus_map_stack.clear();
 
     //Scale the depth range from 0 to 255
-    depth_map = depth_map * (255 / (size - 1));
+    //depth_map = depth_map * (255 / (size - 1));
 
     //Save the image to file
     cout << "Saving depth map to file" << endl;
-    imwrite( output_img_dir + "depth_map.tiff", depth_map);
+    imwrite( output_img_dir + "depth_map.png", depth_map);
 
     //resize(dst, dst, Size(), 0.2, 0.2);
     //namedWindow( "Depth Map", WINDOW_AUTOSIZE );
@@ -214,8 +213,7 @@ void image_stack::fuse_focus(char* out_img){
         for(int x = 0; x < width; x++)
         {
         	//cout << int(depth_map_y_ptr[x]) << endl;
-            focused_y_ptr[x] = raw_stack_y_ptr[ int(depth_map_y_ptr[x]) ][x];
-
+            focused_y_ptr[x] = raw_stack_y_ptr[ depth_map_y_ptr[x] ][x];
         }
 
         raw_stack_y_ptr.clear();
@@ -231,7 +229,7 @@ void image_stack::fuse_focus(char* out_img){
 
     //Save the fused focus image to file
     cout << "Saving fused image to file" << endl;
-    imwrite( output_img_dir + "fused_focus.tiff", focused);
+    imwrite( output_img_dir + "fused_focus.png", focused);
 
     imgconv::mat2numpy(out_img, focused);
 }
@@ -412,7 +410,6 @@ void imgconv::matgray2numpy(char* numpy_img, Mat& mat_img){
         for(int x = 0; x < mat_img.cols; x++){
 
             numpy_row_ptr[x] = mat_row_ptr[x];
-            //cout << numpy_row_ptr[x] << endl;
         }
     }
 }
