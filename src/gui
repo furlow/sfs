@@ -20,7 +20,7 @@ class refocused_image(QLabel):
         self.refocused_pixmap = numpy2qpixmap( self.stack.focused_image )
         self.setPixmap(self.refocused_pixmap.scaled(200, 200, Qt.KeepAspectRatio))
         self.setScaledContents(False)
-        self.setMinimumSize(100, 100)
+        self.setMinimumSize(200, 200)
 
     def refocus(self, QMouseEvent):
         pos = QMouseEvent.pos()
@@ -47,9 +47,9 @@ class refocused_image(QLabel):
 class Program(QDialog):
     def __init__(self, stack, parent = None):
         super(Program, self).__init__(parent)
+        self.setWindowTitle(__appname__)
 
         self.stack = stack
-        self.setWindowTitle(__appname__)
 
         #Set up the refocusing sliders
         focus_label = QLabel("Focus depth")
@@ -86,7 +86,7 @@ def numpy2qpixmap(cvBGRImg):
 
 def main():
     sys.argv[0] = "Shape From Focus"
-    img_dir = sys.argv[1]
+    img_dir = "/Users/josh/Code/sfs/images/speakergrill/"
     stack  = process_stack(img_dir)
     app = QApplication(sys.argv)
     form = Program(stack)

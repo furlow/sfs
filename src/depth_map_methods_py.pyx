@@ -15,6 +15,7 @@ ctypedef np.uint8_t DTYPE_t
 cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
 		image_stack(int, int, int, int, char*) except +
+		void load()
 		void add(char*)
 		void create_depth_map(char*)
 		void fuse_focus(char*)
@@ -34,6 +35,8 @@ cdef class Pyimage_stack:
 		self.width = width
 	def __dealloc__(self):
 		del self.thisptr
+	def load(self):
+		self.thisptr.load()
 	def add(self, char* image_path):
 		self.thisptr.add(image_path)
 	def create_depth_map(self):

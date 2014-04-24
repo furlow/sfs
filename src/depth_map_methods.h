@@ -46,6 +46,9 @@ public:
     //Constructor
     image_stack(int height, int width, int size, int threshold ,char* output_img_dir);
 
+    //Function for loading already computed depth map and fused image
+    void load(void);
+
     //This function is used to add an image to the stack
     void add(char* image_path);
 

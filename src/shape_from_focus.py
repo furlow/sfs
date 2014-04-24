@@ -55,37 +55,42 @@ def process_stack(img_dir):
     img = cv2.imread(img_dir + tmp_cropped + image_files[0], 0)
     height, width = img.shape
 
+
     #Create a new image stack
+    stack = Pyimage_stack(height, width, len(image_files), 1000, img_dir + output)
     #TODO move the opening of the first image to get
     #the height and width of the image stack from within the Pyimage_stack
-    #place the check in the constructor in the c++ or the cythong code
+    #place the check in the constructor in the c++ or the cython code
     print('Creating image stack with dimensions', height, width)
-    stack = Pyimage_stack(height, width, len(image_files), 1000, img_dir + output)
+    if os.path.exists(img_dir + output + 'depth_map.png') \
+    and os.path.exists(img_dir + output + 'fused_focus.png'):
+        # Load pre computed files
+        stack.load()
+    else:
+        # Add image files
+        # TODO Move this into the c++ code
+        start = time.time()
+        for image_file in image_files:
+            print "Adding " + image_file
+            stack.add(img_dir + tmp_cropped + image_file)
+        finish = time.time()
+        print 'Add time =', finish - start
 
-    # Add image files
-    # TODO Move this into the c++ code
-    start = time.time()
-    for image_file in image_files:
-        print "Adding " + image_file
-        stack.add(img_dir + tmp_cropped + image_file)
-    finish = time.time()
-    print 'Execution time =', finish - start
+        # Generate Depth map
+        # TODO Move this into the c++ code
+        start = time.time()
+        print('Generating Depth map...')
+        stack.create_depth_map()
+        finish = time.time()
+        print 'Generate depth map time =', finish - start
 
-    # Generate Depth map
-    # TODO Move this into the c++ code
-    start = time.time()
-    print('Generating Depth map...')
-    stack.create_depth_map()
-    finish = time.time()
-    print 'Execution time =', finish - start
-
-    # Generate an all in focus image
-    # TODO Move this into the c++ code
-    start = time.time()
-    print('Generating fuse focus image')
-    fused_image = stack.fuse_focus()
-    finish = time.time()
-    print 'Execution time =', finish - start
+        # Generate an all in focus image
+        # TODO Move this into the c++ code
+        start = time.time()
+        print('Generating fuse focus image')
+        stack.fuse_focus()
+        finish = time.time()
+        print 'fuse focus time =', finish - start
 
     return stack
 

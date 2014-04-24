@@ -15,6 +15,14 @@ height(height), width(width), size(size), threshold(threshold) , output_img_dir(
     refocused = Mat(height, width, CV_8UC3);
 }
 
+//For loading already computed depth map and fused image
+void image_stack::load(void)
+{
+    depth_map = imread(output_img_dir + "depth_map.png");
+    depth_map.convertTo(depth_map, CV_32F);
+    focused = imread(output_img_dir + "fused_focus.png");
+}
+
 //This function is used to add an image to the stack
 void image_stack::add(char* image_path)
 {
@@ -174,9 +182,9 @@ void image_stack::create_depth_map(char* out_img)
 
     //Save the image to file
     cout << "Saving depth map to file" << endl;
-    imwrite( output_img_dir + "depth_map.jpg", dst);
+    imwrite( output_img_dir + "depth_map.png", dst);
 
-    //resize(dst, dst, Size(), 0.3, 0.3);
+    //resize(dst, dst, Size(), 0.2, 0.2);
     //namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     //imshow("Depth Map", dst);
 
@@ -221,7 +229,7 @@ void image_stack::fuse_focus(char* out_img){
 
     //Save the fused focus image to file
     cout << "Saving fused image to file" << endl;
-    imwrite( output_img_dir + "fused_focus.jpg", focused );
+    imwrite( output_img_dir + "fused_focus.png", focused );
 
     imgconv::mat2numpy(out_img, focused);
 }
