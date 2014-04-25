@@ -15,26 +15,29 @@ ctypedef np.uint8_t DTYPE_t
 #Image stack class definition
 cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
-		image_stack(int, int, int, int, char*) except +
+		image_stack(int, int, int, int, char*, int, int) except +
 		void load(char*, char*)
 		void add(char*)
 		void create_depth_map(char*)
 		void fuse_focus(char*)
 		void refocus(int, int, char*)
+		void resize(int, int)
 
 #Python image class definition
 cdef class Pyimage_stack:
 	cdef image_stack *thisptr
-	cpdef public int height
-	cpdef public int width
+	cdef public int height
+	cdef public int width
 	cdef public np.ndarray focused_image
 	cdef public np.ndarray refocused_image
 	cdef public np.ndarray depth_map
 
-	def __cinit__(self, int height, int width, int size, int threshold, char* output_img_dir):
-		self.thisptr = new image_stack(height, width, size, threshold, output_img_dir)
-		self.height = height
-		self.width = width
+	def __cinit__(self, int height, int width, int size, int threshold, char* output_img_dir,
+	int scaled_width, int scaled_height):
+		self.thisptr = new image_stack(height, width, size, threshold, output_img_dir,
+		scaled_width, scaled_height)
+		self.height = scaled_height
+		self.width = scaled_width
 
 	def __dealloc__(self):
 		del self.thisptr
@@ -46,6 +49,7 @@ cdef class Pyimage_stack:
 		focused_image_local = np.zeros((self.height, self.width, 3), dtype = DTYPE, order = 'c')
 		self.thisptr.load(&depth_map_local.data[0], &focused_image_local.data[0])
 		self.focused_image = focused_image_local
+		self.refocused_image = focused_image_local
 		self.depth_map = depth_map_local
 
 	def add(self, char* image_path):
@@ -71,5 +75,9 @@ cdef class Pyimage_stack:
 
 	def refocus_by_point(self, int y, int x):
 		depth = self.depth_map[y, x]
+		print "Depth: ", depth
 		self.refocus(1, depth)
 		return depth
+
+	def resize(self, int scaled_width , int scaled_height):
+		self.thisptr.resize(scaled_width, scaled_height)

@@ -57,7 +57,7 @@ def process_stack(img_dir):
 
 
     #Create a new image stack
-    stack = Pyimage_stack(height, width, len(image_files), 1000, img_dir + output)
+    stack = Pyimage_stack(height, width, len(image_files), 1000, img_dir + output, 600, 400)
     #TODO move the opening of the first image to get
     #the height and width of the image stack from within the Pyimage_stack
     #place the check in the constructor in the c++ or the cython code

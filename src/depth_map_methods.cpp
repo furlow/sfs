@@ -7,22 +7,26 @@
 using namespace std;
 
 //image stack constructor
-image_stack::image_stack(int height, int width, int size, int threshold, char* output_img_dir):
-height(height), width(width), size(size), threshold(threshold) , output_img_dir(output_img_dir), SML(height, width, 9)
+image_stack::image_stack(int height, int width, int size, int threshold, char* output_img_dir, int scaled_width, int scaled_height):
+height(height), width(width), size(size), threshold(threshold) , output_img_dir(output_img_dir), SML(height, width, 9), scaled_width(scaled_width), scaled_height(scaled_height)
 {
     depth_map = Mat(height, width, CV_8U);
     focused = Mat(height, width, CV_8UC3);
     refocused = Mat(height, width, CV_8UC3);
+    focused_scaled = Mat(scaled_height, scaled_width, CV_8UC3);
+    depth_map_scaled = Mat(scaled_height, scaled_width, CV_8UC3);
 }
 
 //For loading already computed depth map and fused image
 void image_stack::load(char* numpy_depth_map, char* numpy_focused)
 {
     depth_map = imread(output_img_dir + "depth_map.png", CV_LOAD_IMAGE_GRAYSCALE);
-    imgconv::matgray2numpy(numpy_depth_map, depth_map);
+    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
+    imgconv::matgray2numpy(numpy_depth_map, depth_map_scaled);
 
     focused = imread(output_img_dir + "fused_focus.png");
-    imgconv::mat2numpy(numpy_focused, focused);
+    cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
+    imgconv::mat2numpy(numpy_focused, focused_scaled);
 }
 
 //This function is used to add an image to the stack
@@ -188,8 +192,8 @@ void image_stack::create_depth_map(char* out_img)
     //resize(dst, dst, Size(), 0.2, 0.2);
     //namedWindow( "Depth Map", WINDOW_AUTOSIZE );
     //imshow("Depth Map", dst);
-
-    imgconv::matgray2numpy(out_img, depth_map);
+    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
+    imgconv::matgray2numpy(out_img, depth_map_scaled);
 }
 
 void image_stack::fuse_focus(char* out_img){
@@ -231,7 +235,8 @@ void image_stack::fuse_focus(char* out_img){
     cout << "Saving fused image to file" << endl;
     imwrite( output_img_dir + "fused_focus.png", focused);
 
-    imgconv::mat2numpy(out_img, focused);
+    cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
+    imgconv::mat2numpy(out_img, focused_scaled);
 }
 
 void image_stack::generate_blurred_images(){
@@ -257,32 +262,30 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
 	clock_t init, final;
     init=clock();
 
-	if(blurred.size() != size) generate_blurred_images();
+    //Add temp float storage if necessary
+    Mat defocus_map = abs(depth_map_scaled - depth_focus_point);
 
-    Vec3b* blurred_stack_y_ptr[size];
-
-    //for loop which selects the correct pixels based on the depth map value
-    for(int y = 0; y < height; y++)
+    //Blur each pixel
+    for(int row = 0; row < scaled_height; row++)
     {
+        //cout << "Err2" << endl;
+        //Vec3b* refocused_row_ptr = refocused.ptr<Vec3b>(row);
+        //Vec3b* focused_row_ptr = focused.ptr<Vec3b>(row);
+        char* defocus_map_row_ptr = defocus_map.ptr<char>(row);
 
-        Vec3b* refocused_y_ptr = refocused.ptr<Vec3b>(y);
-        char* depth_map_y_ptr = depth_map.ptr<char>(y);
-
-        for(int i = 0; i < size; i++)
+        for(int col = 0; col < scaled_width; col++)
         {
-        	blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
-        }
-
-        //Add pointer array of each image row in the raw_stack
-
-        for(int x = 0; x < width; x++)
-        {
-            refocused_y_ptr[x] = blurred_stack_y_ptr[ abs(int(depth_map_y_ptr[x]) - depth_focus_point) ][x];
+            //cout << "(" << row << "," << col << ")" << endl;
+            boxfilter_single_pixel(
+                row,
+                col,
+                defocus_map_row_ptr[col]
+            );
         }
     }
 
     final = clock() - init;
-    cout << "Refocus image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    cout << "Refocus image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 
     //init=clock();
 
@@ -302,44 +305,55 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
 //This function is most likely obsolete
 inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize){
 
-	int ksize_half = (ksize / 2);
-	int ksize_sq = ksize * ksize;
-	//cout << "ksize_half " << ksize_half << endl;
+	int ksize_sq = pow(ksize*2 + 1, 2);
+    int col_temp, row_temp;
+    int rows_double = scaled_height * 2;
+    int cols_double = scaled_width * 2;
 	int b_sum = 0, g_sum = 0, r_sum = 0;
-	int lower_lim_col, lower_lim_row;
+    Vec3b* focused_row_ptr = NULL;
 
-	if(y - ksize_half < 0){
-		lower_lim_row = 0;
-	}
-	else
-	{
-		lower_lim_row = ksize_half;
-	}
+    //cout << "ksize: " << ksize << endl;
 
-	if(x - ksize_half < 0){
-		lower_lim_col = 0;
-	}
-	else
+	for(int row = y - ksize;
+        row <= y + ksize;
+        row++
+        )
 	{
-		lower_lim_col =  ksize_half;
-	}
+        if(row < focused.rows)
+        {
+            row_temp = abs(row);
+        }
+        else
+        {
+            row_temp = rows_double - row - 1;
+        }
 
-	for(int row = y - lower_lim_row; row <= (y + ksize_half) && row < focused.rows; row++)
-	{
-		Vec3b* row_ptr = focused.ptr<Vec3b>(row);
-		for(int col = x - lower_lim_col; col <= (x + ksize_half) && col < focused.cols; col++)
+        focused_row_ptr = focused_scaled.ptr<Vec3b>(row_temp);
+
+		for(int col = x - ksize;
+            col <= x + ksize;
+            col++
+            )
 		{
-			b_sum += row_ptr[col][0];
-			g_sum += row_ptr[col][1];
-			r_sum += row_ptr[col][2];
+            if(col < focused.cols)
+            {
+                col_temp = abs(col);
+            }
+            else
+            {
+                col_temp = cols_double - col - 1;
+            }
+            b_sum += focused_row_ptr[col_temp].val[0];
+            g_sum += focused_row_ptr[col_temp].val[1];
+            r_sum += focused_row_ptr[col_temp].val[2];
 		}
 	}
 
-	Vec3b* pixel = refocused.ptr<Vec3b>(y);
+	Vec3b* pixel = refocused.ptr<Vec3b>(y, x);
 
-	pixel[x][0] = (b_sum / ksize_sq);
-	pixel[x][1] = (g_sum / ksize_sq);
-	pixel[x][2] = (r_sum / ksize_sq);
+	pixel->val[0] = b_sum / ksize_sq;
+	pixel->val[1] = g_sum / ksize_sq;
+	pixel->val[2] = r_sum / ksize_sq;
 }
 
 /* Sum Modified Laplacian focus measure
@@ -412,4 +426,12 @@ void imgconv::matgray2numpy(char* numpy_img, Mat& mat_img){
             numpy_row_ptr[x] = mat_row_ptr[x];
         }
     }
+}
+
+void image_stack::resize(int in_scaled_width, int in_scaled_height){
+    scaled_width = in_scaled_width;
+    scaled_height = in_scaled_height;
+    cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
+    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
+    cv::resize(refocused, refocused, Size(scaled_width, scaled_height));
 }

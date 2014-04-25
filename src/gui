@@ -3,6 +3,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 from shape_from_focus import process_stack
+import matplotlib.pylab as plt
 import cv2
 import numpy2qimage
 
@@ -20,40 +21,43 @@ class refocusImage(QLabel):
         print self.stack.height
 
         #Set up the image pixmap
-        self.refocused_pixmap = numpy2qpixmap( self.stack.focused_image )
-        self.setPixmap(self.refocused_pixmap.scaled(200, 200, Qt.KeepAspectRatio))
-        self.setScaledContents(False)
         self.setMinimumSize(600, 400)
+        self.setScaledContents(False)
+        plt.imshow(self.stack.focused_image)
+        plt.show()
+        self.refocused_pixmap = numpy2qpixmap(self.stack.focused_image)
+        self.setPixmap(self.refocused_pixmap)
 
     def updateImage(self):
+        print "updateImage..."
         self.refocused_pixmap = numpy2qpixmap(self.stack.refocused_image)
-        self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
+        self.setPixmap(self.refocused_pixmap)
 
     def mouseRefocus(self, QMouseEvent):
         pos = QMouseEvent.pos()
-        print pos
-        x_point = self.x_scale * pos.x()
-        y_point = self.y_scale * pos.y()
-        print x_point, y_point
-        depth = self.stack.refocus_by_point(y_point, x_point)
+        print "mouseRefocus", pos
+        depth = self.stack.refocus_by_point(pos.y(), pos.x())
         self.updateImage()
         self.focusChanged.emit(depth)
 
     def valueRefocus(self, depth):
+        print "valueRefocus"
         self.stack.refocus(1, depth)
         self.updateImage()
 
     def mousePressEvent(self, QMouseEvent):
+        print "mousePressEvent"
         self.mouseRefocus(QMouseEvent)
 
     def mouseMoveEvent(self, QMouseEvent):
+        print "mouseMoveEvent"
         self.mouseRefocus(QMouseEvent)
 
     def resizeEvent(self, QResizeEvent):
-        self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
-        self.x_scale = self.stack.width /  float( QResizeEvent.size().width() )
-        self.y_scale = self.stack.height / float( QResizeEvent.size().height() )
-        print self.x_scale, self.y_scale
+        print "resizeEvent"
+        self.stack.resize(self.width(), self.height())
+        self.updateImage()
+
 
 class Program(QDialog):
     def __init__(self, stack, parent = None):
@@ -90,7 +94,7 @@ class Program(QDialog):
         self.setLayout(layout)
 
         #Connect sliders to the refocusImage
-        self.focusSlider.valueChanged.connect(self.refocusImage.valueRefocus)
+        self.focusSlider.sliderMoved.connect(self.refocusImage.valueRefocus)
         self.refocusImage.focusChanged.connect(self.focusSlider.setValue)
 
 def numpy2qpixmap(cvBGRImg):

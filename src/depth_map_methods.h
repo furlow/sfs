@@ -44,7 +44,8 @@ class sum_modified_laplacian: public focus_measure
 class image_stack{
 public:
     //Constructor
-    image_stack(int height, int width, int size, int threshold ,char* output_img_dir);
+    image_stack(int height, int width, int size, int threshold ,char* output_img_dir,
+    int scaled_width, int scaled_height);
 
     //Function for loading already computed depth map and fused image
     void load(char* numpy_depth_map, char* numpy_focused);
@@ -76,12 +77,17 @@ public:
     //Function for generating blurred images for use in the refocus algorithm
     void generate_blurred_images();
 
+    //Function to set resize parameters for output display size
+    void resize(int in_scaled_width, int in_scaled_height);
+
     //Function used to apply boxfilter blur to a single pixel
     inline void boxfilter_single_pixel(int y, int x, int ksize);
 
 private:
     int height;
     int width;
+    int scaled_width;
+    int scaled_height;
     int size;
     float threshold;
     string output_img_dir;
@@ -92,6 +98,8 @@ private:
     Mat focused;
     Mat refocused;
     Mat depth_map;
+    Mat focused_scaled;
+    Mat depth_map_scaled;
     Mat dst; //temporary storage of an array
 };
 
