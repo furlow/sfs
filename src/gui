@@ -8,7 +8,10 @@ import numpy2qimage
 
 __appname__ = "Shape From Focus Refocus"
 
-class refocused_image(QLabel):
+class refocusImage(QLabel):
+
+    focusChanged = Signal(int)
+
     def __init__(self, stack, parent = None):
         QLabel.__init__(self)
 
@@ -20,23 +23,31 @@ class refocused_image(QLabel):
         self.refocused_pixmap = numpy2qpixmap( self.stack.focused_image )
         self.setPixmap(self.refocused_pixmap.scaled(200, 200, Qt.KeepAspectRatio))
         self.setScaledContents(False)
-        self.setMinimumSize(300, 200)
+        self.setMinimumSize(600, 400)
 
-    def refocus(self, QMouseEvent):
+    def updateImage(self):
+        self.refocused_pixmap = numpy2qpixmap(self.stack.refocused_image)
+        self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
+
+    def mouseRefocus(self, QMouseEvent):
         pos = QMouseEvent.pos()
         print pos
         x_point = self.x_scale * pos.x()
         y_point = self.y_scale * pos.y()
         print x_point, y_point
-        self.stack.refocus_by_point(y_point, x_point)
-        self.refocused_pixmap = numpy2qpixmap(self.stack.refocused_image)
-        self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
+        depth = self.stack.refocus_by_point(y_point, x_point)
+        self.updateImage()
+        self.focusChanged.emit(depth)
+
+    def valueRefocus(self, depth):
+        self.stack.refocus(1, depth)
+        self.updateImage()
 
     def mousePressEvent(self, QMouseEvent):
-        self.refocus(QMouseEvent)
+        self.mouseRefocus(QMouseEvent)
 
     def mouseMoveEvent(self, QMouseEvent):
-        self.refocus(QMouseEvent)
+        self.mouseRefocus(QMouseEvent)
 
     def resizeEvent(self, QResizeEvent):
         self.setPixmap(self.refocused_pixmap.scaled(self.width(), self.height(), Qt.KeepAspectRatio))
@@ -54,25 +65,33 @@ class Program(QDialog):
         #Set up the refocusing sliders
         focus_label = QLabel("Focus depth")
         dof_label = QLabel("Depth of Field")
-        self.focus = QSlider()
-        self.dof = QSlider()
-        self.focus.setMaximum(20)
-        self.focus.setMinimum(0)
-        self.dof.setMaximum(20)
-        self.dof.setMinimum(0)
+        self.focusSlider = QSlider(Qt.Horizontal)
+        self.dofSlider = QSlider(Qt.Horizontal)
+        self.focusSlider.setMaximum(18)
+        self.focusSlider.setMinimum(0)
+        self.dofSlider.setMaximum(18)
+        self.dofSlider.setMinimum(0)
 
         #Align the widgets in their containers
         options_layout = QVBoxLayout()
         options_layout.addWidget(focus_label)
-        options_layout.addWidget(self.focus)
+        options_layout.addWidget(self.focusSlider)
         options_layout.addWidget(dof_label)
-        options_layout.addWidget(self.dof)
+        options_layout.addWidget(self.dofSlider)
 
+
+        #Create a refocused_image
+        self.refocusImage = refocusImage(stack);
+
+        #Final Layout setup
         layout = QHBoxLayout()
-        layout.addWidget(refocused_image(stack))
+        layout.addWidget(self.refocusImage)
         layout.addItem(options_layout)
-
         self.setLayout(layout)
+
+        #Connect sliders to the refocusImage
+        self.focusSlider.valueChanged.connect(self.refocusImage.valueRefocus)
+        self.refocusImage.focusChanged.connect(self.focusSlider.setValue)
 
 def numpy2qpixmap(cvBGRImg):
     #convert from BGR to RGB

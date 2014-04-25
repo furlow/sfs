@@ -71,5 +71,5 @@ cdef class Pyimage_stack:
 
 	def refocus_by_point(self, int y, int x):
 		depth = self.depth_map[y, x]
-		print depth
-		return self.refocus(1, depth)
+		self.refocus(1, depth)
+		return depth
