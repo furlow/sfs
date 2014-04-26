@@ -262,6 +262,7 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
 	clock_t init, final;
     init=clock();
 
+    depth_map_scaled.convertTo(depth_map_scaled, CV_8S);
     Mat defocus_map = abs(depth_map_scaled - depth_focus_point);
 
 	if(blurred.size() != size) generate_blurred_images();
