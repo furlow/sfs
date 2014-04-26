@@ -264,18 +264,17 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
 
     //Add temp float storage if necessary
     Mat defocus_map = abs(depth_map_scaled - depth_focus_point);
+    rows_double = scaled_height * 2;
+    cols_double = scaled_width * 2;
 
     //Blur each pixel
     for(int row = 0; row < scaled_height; row++)
     {
-        //cout << "Err2" << endl;
-        //Vec3b* refocused_row_ptr = refocused.ptr<Vec3b>(row);
-        //Vec3b* focused_row_ptr = focused.ptr<Vec3b>(row);
+
         char* defocus_map_row_ptr = defocus_map.ptr<char>(row);
 
         for(int col = 0; col < scaled_width; col++)
         {
-            //cout << "(" << row << "," << col << ")" << endl;
             boxfilter_single_pixel(
                 row,
                 col,
@@ -286,19 +285,6 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
 
     final = clock() - init;
     cout << "Refocus image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-
-    //init=clock();
-
-    //Display the refocused image
-    //resize(refocused, dst, Size(), 0.3, 0.3);
-    //imshow("Fused Focus", dst);
-
-    //final = clock() - init;
-    //cout << "Displaying image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-
-    //Save the refocused image to file
-    //cout << "Saving fused image to file" << endl;
-    //imwrite( output_img_dir + "refocused.jpg", refocused );
     imgconv::mat2numpy(out_img, refocused);
 }
 
@@ -307,8 +293,6 @@ inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize){
 
 	int ksize_sq = pow(ksize*2 + 1, 2);
     int col_temp, row_temp;
-    int rows_double = scaled_height * 2;
-    int cols_double = scaled_width * 2;
 	int b_sum = 0, g_sum = 0, r_sum = 0;
     Vec3b* focused_row_ptr = NULL;
 

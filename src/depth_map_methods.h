@@ -88,6 +88,8 @@ private:
     int width;
     int scaled_width;
     int scaled_height;
+    int rows_double;
+    int cols_double;
     int size;
     float threshold;
     string output_img_dir;
