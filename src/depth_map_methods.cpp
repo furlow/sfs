@@ -246,7 +246,7 @@ void image_stack::generate_blurred_images(){
 
     //for loop which blurs the infocus image from 0 now blur to the max blur required
     for(int z = 0; z < size; z++){
-    	GaussianBlur(focused, dst, Size(z * 6 + 1, z * 6 + 1), 0, 0);
+    	GaussianBlur(focused_scaled, dst, Size(z * 2 + 1, z * 2 + 1), 0, 0);
     	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
     	blurred.push_back(dst.clone());
     }
@@ -262,29 +262,35 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
 	clock_t init, final;
     init=clock();
 
-    //Add temp float storage if necessary
     Mat defocus_map = abs(depth_map_scaled - depth_focus_point);
-    rows_double = scaled_height * 2;
-    cols_double = scaled_width * 2;
 
-    //Blur each pixel
-    for(int row = 0; row < scaled_height; row++)
+	if(blurred.size() != size) generate_blurred_images();
+
+    Vec3b* blurred_stack_y_ptr[size];
+
+    //for loop which selects the correct pixels based on the depth map value
+    for(int y = 0; y < scaled_height; y++)
     {
 
-        char* defocus_map_row_ptr = defocus_map.ptr<char>(row);
+        Vec3b* refocused_y_ptr = refocused.ptr<Vec3b>(y);
+        char* defocus_map_y_ptr = defocus_map.ptr<char>(y);
 
-        for(int col = 0; col < scaled_width; col++)
+
+        for(int i = 0; i < size; i++)
         {
-            boxfilter_single_pixel(
-                row,
-                col,
-                defocus_map_row_ptr[col]
-            );
+        	blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
+        }
+
+        //Add pointer array of each image row in the raw_stack
+
+        for(int x = 0; x < scaled_width; x++)
+        {
+            refocused_y_ptr[x] = blurred_stack_y_ptr[defocus_map_y_ptr[x]][x];
         }
     }
 
     final = clock() - init;
-    cout << "Refocus image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    cout << "Refocus image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
     imgconv::mat2numpy(out_img, refocused);
 }
 
