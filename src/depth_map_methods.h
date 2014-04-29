@@ -96,6 +96,7 @@ public:
 private:
     int height;
     int width;
+    int size;
     int scaled_width;
     int scaled_height;
     int rows_double;

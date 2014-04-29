@@ -16,8 +16,8 @@ class refocusImage(QLabel):
         QLabel.__init__(self)
 
         self.stack = stack
-        print self.stack.width
-        print self.stack.height
+        print self.stack.scaled_width
+        print self.stack.scaled_height
 
         #Set up the image pixmap
         self.setMinimumSize(600, 400)
