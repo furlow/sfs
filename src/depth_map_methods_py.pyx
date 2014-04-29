@@ -3,11 +3,11 @@
 import numpy as np
 cimport numpy as np
 import os
+import sys
 import sort
 import shutil
 import subprocess
 import json
-import matplotlib.pylab as plt
 # We now need to fix a datatype for our arrays. I've used the variable
 # DTYPE for this, which is assigned to the usual NumPy runtime
 # type info object.
@@ -43,8 +43,7 @@ cdef class Pyimage_stack:
 	cdef public np.ndarray focused_image
 	cdef public np.ndarray refocused_image
 	cdef public np.ndarray depth_map
-	cdef public img_dir
-
+	cdef img_dir
 	def __cinit__(self,
 				  char* img_dir,
 				  int threshold,
@@ -67,7 +66,7 @@ cdef class Pyimage_stack:
 
 		if not os.path.exists(self.img_dir + tmp_copy) \
 		and not os.path.exists(self.img_dir + tmp_cropped):
-			self.align_images(self.img_dir)
+			self.align_images()
 
 		self.thisptr = new image_stack(self.img_dir,
 										threshold,
@@ -136,18 +135,30 @@ cdef class Pyimage_stack:
 		sort.sort_nicely(image_files)
 
 		print('Creating temporary directories...')
-		os.mkdir(self.img_dir + tmp_copy)
-		os.mkdir(self.img_dir + tmp_cropped)
-		os.mkdir(self.img_dir + output)
+		try:
+			os.mkdir(self.img_dir + tmp_copy)
+			os.mkdir(self.img_dir + tmp_cropped)
+			os.mkdir(self.img_dir + output)
+		except:
+			pass
 
-		align_image_stack_cmd = ["/Applications/Hugin.app/Contents/MacOS/align_image_stack",
-								"-m",
-								"-C",
-								"-c",
-								"4",
-								"-a",
-								self.img_dir + tmp_cropped]
-		#align_image_stack_cmd = ["align_image_stack", "-m", "-l", "-C", "-c", "4", "-a", self.img_dir + tmp_cropped]
+		os_type = sys.platform
+		if os_type == 'darwin':
+			align_image_stack_cmd = ["/Applications/Hugin.app/Contents/MacOS/align_image_stack"]
+		elif os_type == 'linux2':
+			align_image_stack_cmd = ["align_image_stack"]
+		elif os_type == 'win32':
+			align_image_stack_cmd = ["align_image_stack"]
+		else:
+			raise('OS Type was not recognised!')
+
+		align_image_stack_cmd +=["-m",
+								 "-C",
+								 "-c",
+								 "4",
+								 "-l",
+								 "-a",
+								 self.img_dir + tmp_cropped]
 
 		for file in image_files:
 			shutil.copyfile(self.img_dir + file, self.img_dir + tmp_copy + file)

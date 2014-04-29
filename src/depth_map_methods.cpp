@@ -41,7 +41,6 @@ void image_stack::allocate(char* numpy_depth_map,
                             int in_scaled_width,
                             int in_scaled_height)
 {
-    cout << "Allocate" << endl;
     scaled_height = in_scaled_height;
     scaled_width = in_scaled_width;
     depth_map_scaled = Mat( scaled_height, scaled_width, CV_8U, numpy_depth_map);
@@ -54,18 +53,10 @@ void image_stack::add(char* image_path)
 {
 
     Mat colour_image, img_32f, gray_image;
-
-    cout << image_path << endl;
-
-    clock_t init, final;
-
-    init=clock();
-
     colour_image = imread(image_path);
 
     if(raw_stack.size() == 0)
     {
-        cout << "Allocating Depth map and creating sum modified laplacian" << endl;
         height = colour_image.rows;
         width = colour_image.cols;
         SML = new sum_modified_laplacian(colour_image.rows, colour_image.cols, 13);
@@ -74,25 +65,9 @@ void image_stack::add(char* image_path)
     }
 
     raw_stack.push_back(colour_image.clone());
-
-    final=clock()-init;
-    cout << "Read image and push into stack" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-
-    init=clock();
-
     cvtColor(colour_image, gray_image, CV_BGR2GRAY);
     gray_image.convertTo(img_32f, CV_32F);
-
-    final=clock()-init;
-    cout << "Convert image to gray float " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-
-    init=clock();
-
     focus_map_stack.push_back((*SML)(img_32f).clone());
-
-    final=clock()-init;
-    cout << "Run SML and push into the stack " << (double)final / ((double)CLOCKS_PER_SEC)
-    << endl;
 }
 
 //Function for determining the focus maximum of a pixel
@@ -201,19 +176,8 @@ void image_stack::create_depth_map()
     //Clear out the focus map stack as the data is no longer needed
     focus_map_stack.clear();
 
-    //Scale the depth range from 0 to 255
-    //depth_map = depth_map * (255 / (size - 1));
-
-    //cv::resize(depth_map, dst, Size(), 0.2, 0.2);
-    //namedWindow( "Depth Map", WINDOW_AUTOSIZE );
-    //imshow("Depth Map", dst);
-    //waitKey(0);
-
     cout << "Saving depth map to file" << endl;
     imwrite( img_dir + "output/" + "depth_map.png", depth_map);
-
-    cout << "Rescaling image" << endl;
-
     cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
 }
 
@@ -237,7 +201,6 @@ void image_stack::fuse_focus(){
 
         for(int x = 0; x < width; x++)
         {
-        	//cout << int(depth_map_y_ptr[x]) << endl;
             focused_y_ptr[x] = raw_stack_y_ptr[ depth_map_y_ptr[x] ][x];
         }
 
@@ -247,22 +210,18 @@ void image_stack::fuse_focus(){
     //Clear out the raw_stack as the data is no longer needed
     raw_stack.clear();
 
-    //Save the fused focus image to file
-    cout << "Saving fused image to file" << endl;
     imwrite( img_dir + "output/" + "fused_focus.png", focused);
-
-    //convert to RGB, scale and generate blurred images
     cv::cvtColor(focused, focused, CV_BGR2RGB);
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
     generate_blurred_images();
 }
 
+//Function which blurs the infocus image from 0 blur to the max blur required
 void image_stack::generate_blurred_images(){
 
 	clock_t init, final;
     init=clock();
 
-    //for loop which blurs the infocus image from 0 now blur to the max blur required
     for(int z = 0; z < size; z++){
     	GaussianBlur(focused_scaled, dst, Size(z * 2 + 1, z * 2 + 1), 0, 0);
     	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
@@ -276,9 +235,6 @@ void image_stack::generate_blurred_images(){
 
 //Function used to artificially refocus an image
 void image_stack::refocus(int in_depth_of_field, int in_focus_depth){
-
-	clock_t init, final;
-    init=clock();
 
     depth_of_feild = in_depth_of_field;
     focus_depth = in_focus_depth;
@@ -307,9 +263,6 @@ void image_stack::refocus(int in_depth_of_field, int in_focus_depth){
             refocused_y_ptr[x] = blurred_stack_y_ptr[defocus_map_y_ptr[x]][x];
         }
     }
-
-    final = clock() - init;
-    cout << "Refocus image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 }
 
 //This function is most likely obsolete
@@ -319,8 +272,6 @@ inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize){
     int col_temp, row_temp;
 	int b_sum = 0, g_sum = 0, r_sum = 0;
     Vec3b* focused_row_ptr = NULL;
-
-    //cout << "ksize: " << ksize << endl;
 
 	for(int row = y - ksize;
         row <= y + ksize;
@@ -368,10 +319,6 @@ inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize){
  */
 Mat sum_modified_laplacian::operator()(Mat& image){
 
-    clock_t init, final;
-
-    init=clock();
-
     for(int y = step; y < height - step; y++)
     {
         float* ML_ptr = ML.ptr<float>(y);
@@ -386,45 +333,12 @@ Mat sum_modified_laplacian::operator()(Mat& image){
             abs( 2 * img_ptr[x] - img_ptr[x - step] - img_ptr[x + step])
             +
             abs( 2 * img_ptr[x] - img_ptr_step_minus[x] - img_ptr_step_plus[x]);
-
-            //cout << ML_ptr[x] << endl;
         }
     }
 
-    final=clock()-init;
-    cout << "Run SML algorithm " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-
-    init=clock();
 
     boxFilter(ML, SML, -1, Size(2*step+1,2*step+1), Point(-1,-1), false);
-
-    final=clock()-init;
-    cout << "Run Box filter " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-
     return SML;
-}
-
-void imgconv::mat2numpy(char* numpy_img, Mat& mat_img)
-{
-
-    for(int y = 0; y < mat_img.rows; y++){
-
-        char* numpy_row_ptr = numpy_img + ( y * mat_img.cols * 3 );
-        Vec3b* mat_row_ptr = mat_img.ptr<Vec3b>(y);
-
-        for(int x = 0; x < mat_img.cols; x++){
-
-            char* numpy_chan_ptr = numpy_row_ptr + (x * 3);
-
-            for(int c = 0; c < 3; c++){
-                numpy_chan_ptr[c] = mat_row_ptr[x].val[2 - c];
-            }
-        }
-    }
-}
-
-void imgconv::matgray2numpy(char* numpy_img, Mat& mat_img){
-    numpy_img = mat_img.ptr<char>(0);
 }
 
 void image_stack::resize(int in_scaled_width, int in_scaled_height){
