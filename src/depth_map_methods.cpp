@@ -18,8 +18,9 @@ image_stack::image_stack(char* img_dir,
                         }
 
 //For loading already computed depth map and fused image
-void image_stack::load()
+void image_stack::load(int in_size)
 {
+    size = in_size;
     depth_map = imread(img_dir + "output/" + "depth_map.png", CV_LOAD_IMAGE_GRAYSCALE);
     cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
 
@@ -65,7 +66,7 @@ void image_stack::add(char* image_path)
         cout << "Allocating Depth map and creating sum modified laplacian" << endl;
         height = colour_image.rows;
         width = colour_image.cols;
-        SML = new sum_modified_laplacian(colour_image.rows, colour_image.cols, 9);
+        SML = new sum_modified_laplacian(colour_image.rows, colour_image.cols, 13);
         depth_map = Mat(colour_image.rows, colour_image.cols, CV_8U);
         focused = Mat(colour_image.rows, colour_image.cols, CV_8UC3);
     }
@@ -182,10 +183,11 @@ inline char image_stack::coarse_depth_esstimation(int y, int x)
 }*/
 
 //Function for generating a depth map
-void image_stack::create_depth_map()
+int image_stack::create_depth_map()
 {
     //Fix the size of stack
     size = raw_stack.size();
+
 
     for(int y = 0; y < height; y++)
     {
@@ -215,6 +217,8 @@ void image_stack::create_depth_map()
     cout << "Rescaling image" << endl;
 
     cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
+
+    return size;
 }
 
 void image_stack::fuse_focus(){

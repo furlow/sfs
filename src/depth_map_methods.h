@@ -50,13 +50,13 @@ public:
                 int scaled_height);
 
     //Function for loading already computed depth map and fused image
-    void load();
+    void load(int in_size);
 
     //This function is used to add an image to the stack
     void add(char* image_path);
 
     //Function for generating a depth map from a focus stack processed with a focus measure
-    void create_depth_map();
+    int create_depth_map();
 
     //Function for determining the focus maximum of a pixel
     //using coarse depth esstimation method

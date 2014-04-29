@@ -6,6 +6,7 @@ import os
 import sort
 import shutil
 import subprocess
+import json
 import matplotlib.pylab as plt
 # We now need to fix a datatype for our arrays. I've used the variable
 # DTYPE for this, which is assigned to the usual NumPy runtime
@@ -24,9 +25,9 @@ tmp_copy = "tmp_copy/"
 cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
 		image_stack(char*, int, int, int) except +
-		void load()
+		void load(int)
 		void add(char*)
-		void create_depth_map()
+		int create_depth_map()
 		void fuse_focus()
 		void refocus(int, int)
 		void resize(int, int)
@@ -38,6 +39,7 @@ cdef class Pyimage_stack:
 	cdef public int scaled_height
 	cdef public int scaled_width
 	cdef public int depth
+	cdef public int size
 	cdef public np.ndarray focused_image
 	cdef public np.ndarray refocused_image
 	cdef public np.ndarray depth_map
@@ -66,14 +68,18 @@ cdef class Pyimage_stack:
 		self.allocate()
 
 		if os.path.exists(self.img_dir + output + 'depth_map.png') \
-		and os.path.exists(self.img_dir + output + 'fused_focus.png'):
+		and os.path.exists(self.img_dir + output + 'fused_focus.png') \
+		and os.path.exists(self.img_dir + output + 'attributes.txt'):
 			# Load pre computed files
-			self.thisptr.load()
+			with open(img_dir + output + 'attribtues.txt', 'r') as infile:
+				attributes = json.load(infile)
+				self.thisptr.load(attributes['size'])
 		else:
 			self.compute()
 
 	def __dealloc__(self):
 		del self.thisptr
+
 
 	def add(self, char* image_path):
 		self.thisptr.add(image_path)
@@ -88,8 +94,11 @@ cdef class Pyimage_stack:
 			self.add(self.img_dir + tmp_cropped + image_file)
 
 		#Process the stack and create the depth map and fused images
-		self.thisptr.create_depth_map()
+		self.size = self.thisptr.create_depth_map()
 		self.thisptr.fuse_focus()
+		attributes = {"size" : self.size}
+		with open(self.img_dir + output + 'attribtues.txt', 'w') as outfile:
+			json.dump(attributes, outfile)
 
 	def refocus(self, int depth_of_field, int focus_depth):
 		self.depth = focus_depth

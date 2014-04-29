@@ -105,7 +105,7 @@ def numpy2qpixmap(cvBGRImg):
 def main():
     sys.argv[0] = "Shape From Focus"
     img_dir = sys.argv[1]
-    stack = Pyimage_stack(img_dir, 2000, 600, 400)
+    stack = Pyimage_stack(img_dir, 5000, 600, 400)
     app = QApplication(sys.argv)
     form = Program(stack)
     form.show()
