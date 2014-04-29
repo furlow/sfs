@@ -16,16 +16,11 @@ class refocusImage(QLabel):
         QLabel.__init__(self)
 
         self.stack = stack
-        print self.stack.scaled_width
-        print self.stack.scaled_height
 
         #Set up the image pixmap
         self.setMinimumSize(600, 400)
         self.setScaledContents(False)
-        plt.imshow(self.stack.focused_image)
-        plt.show()
-        self.refocused_pixmap = numpy2qpixmap(self.stack.focused_image)
-        self.setPixmap(self.refocused_pixmap)
+        self.focused_pixmap = numpy2qpixmap(self.stack.focused_image)
 
     def updateImage(self):
         print "updateImage..."
@@ -41,8 +36,11 @@ class refocusImage(QLabel):
 
     def valueRefocus(self, depth):
         print "valueRefocus"
-        self.stack.refocus(1, depth)
-        self.updateImage()
+        if depth == -1:
+            self.setPixmap(self.focused_pixmap)
+        else:
+            self.stack.refocus(1, depth)
+            self.updateImage()
 
     def mousePressEvent(self, QMouseEvent):
         print "mousePressEvent"
@@ -71,9 +69,9 @@ class Program(QDialog):
         self.focusSlider = QSlider(Qt.Horizontal)
         self.dofSlider = QSlider(Qt.Horizontal)
         self.focusSlider.setMaximum(self.stack.size)
-        self.focusSlider.setMinimum(0)
+        self.focusSlider.setMinimum(-1)
         self.dofSlider.setMaximum(self.stack.size)
-        self.dofSlider.setMinimum(0)
+        self.dofSlider.setMinimum(-1)
 
         #Align the widgets in their containers
         options_layout = QVBoxLayout()
@@ -97,8 +95,8 @@ class Program(QDialog):
         self.refocusImage.focusChanged.connect(self.focusSlider.setValue)
 
 #Convert numpy to pixmap image TODO move to library
-def numpy2qpixmap(cvBGRImg):
-    qimg = numpy2qimage.toQImage(cvBGRImg)
+def numpy2qpixmap(numpyImg):
+    qimg = numpy2qimage.toQImage(numpyImg)
     Qpixmap_Img = QPixmap.fromImage(qimg)
     return Qpixmap_Img
 
