@@ -24,10 +24,10 @@ tmp_copy = "tmp_copy/"
 #Image stack class definition
 cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
-		image_stack(char*, int, int, int) except +
+		image_stack(char*, int, int, int, int) except +
 		void load(int)
 		void add(char*)
-		int create_depth_map()
+		void create_depth_map()
 		void fuse_focus()
 		void refocus(int, int)
 		void resize(int, int)
@@ -55,31 +55,37 @@ cdef class Pyimage_stack:
 		self.scaled_width = scaled_width
 		self.img_dir = img_dir
 
-		self.thisptr = new image_stack(self.img_dir,
-										threshold,
-										scaled_width,
-										scaled_height)
+		if os.path.exists(self.img_dir + output + 'attributes.txt'):
+			with open(img_dir + output + 'attributes.txt', 'r') as infile:
+				self.size = json.load(infile)
+				self.thisptr.load(self.size)
+		else:
+			files = [file for file in os.listdir(self.img_dir) if file.endswith('.JPG')]
+			self.size = len(files)
+			with open(self.img_dir + output + 'attribtues.txt', 'w') as outfile:
+				json.dump(self.size, outfile)
 
 		if not os.path.exists(self.img_dir + tmp_copy) \
-		and not os.path.exists(self.img_dir + tmp_cropped) \
-		and not os.path.exists(self.img_dir + output):
+		and not os.path.exists(self.img_dir + tmp_cropped):
 			self.align_images(self.img_dir)
+
+		self.thisptr = new image_stack(self.img_dir,
+										threshold,
+										self.size,
+										scaled_width,
+										scaled_height)
 
 		self.allocate()
 
 		if os.path.exists(self.img_dir + output + 'depth_map.png') \
-		and os.path.exists(self.img_dir + output + 'fused_focus.png') \
-		and os.path.exists(self.img_dir + output + 'attributes.txt'):
+		and os.path.exists(self.img_dir + output + 'fused_focus.png'):
 			# Load pre computed files
-			with open(img_dir + output + 'attribtues.txt', 'r') as infile:
-				attributes = json.load(infile)
-				self.thisptr.load(attributes['size'])
+			self.thisptr.load(self.size)
 		else:
 			self.compute()
 
 	def __dealloc__(self):
 		del self.thisptr
-
 
 	def add(self, char* image_path):
 		self.thisptr.add(image_path)
@@ -94,11 +100,8 @@ cdef class Pyimage_stack:
 			self.add(self.img_dir + tmp_cropped + image_file)
 
 		#Process the stack and create the depth map and fused images
-		self.size = self.thisptr.create_depth_map()
+		self.thisptr.create_depth_map()
 		self.thisptr.fuse_focus()
-		attributes = {"size" : self.size}
-		with open(self.img_dir + output + 'attribtues.txt', 'w') as outfile:
-			json.dump(attributes, outfile)
 
 	def refocus(self, int depth_of_field, int focus_depth):
 		self.depth = focus_depth

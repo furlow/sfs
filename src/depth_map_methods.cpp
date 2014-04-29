@@ -9,9 +9,11 @@ using namespace std;
 //image stack constructor
 image_stack::image_stack(char* img_dir,
                         int threshold,
+                        int size,
                         int scaled_width,
                         int scaled_height):
-                        threshold(threshold) ,
+                        threshold(threshold),
+                        size(size),
                         img_dir(img_dir),
                         scaled_width(scaled_width),
                         scaled_height(scaled_height){
@@ -99,7 +101,7 @@ inline char image_stack::coarse_depth_esstimation(int y, int x)
     int max_focus_depth = 0;
     float max_focus = 0;
 
-    for(int z = 0; z < focus_map_stack.size(); z++)
+    for(int z = 0; z < size; z++)
     {
 
         float focus = focus_map_stack[z].at<float>(y,x);
@@ -117,7 +119,7 @@ inline char image_stack::coarse_depth_esstimation(int y, int x)
 	}
 	else
 	{
-		return focus_map_stack.size() - 1;
+		return size - 1;
 	}
 
 }
@@ -130,7 +132,7 @@ inline char image_stack::coarse_depth_esstimation(int y, int x)
     float max_focus_minus = 0;
     float max_focus_plus = 0;
 
-    for(int z = 2; z < focus_map_stack.size(); z++)
+    for(int z = 2; z < size; z++)
     {
         //find peak
         if( *(focus_map_stack[z - 1].ptr<float>(y,x)) > max_focus //&&
@@ -183,12 +185,8 @@ inline char image_stack::coarse_depth_esstimation(int y, int x)
 }*/
 
 //Function for generating a depth map
-int image_stack::create_depth_map()
+void image_stack::create_depth_map()
 {
-    //Fix the size of stack
-    size = raw_stack.size();
-
-
     for(int y = 0; y < height; y++)
     {
 
@@ -217,8 +215,6 @@ int image_stack::create_depth_map()
     cout << "Rescaling image" << endl;
 
     cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
-
-    return size;
 }
 
 void image_stack::fuse_focus(){
@@ -233,7 +229,7 @@ void image_stack::fuse_focus(){
         Vec3b* focused_y_ptr = focused.ptr<Vec3b>(y);
         char* depth_map_y_ptr = depth_map.ptr<char>(y);
 
-        for(int i = 0; i < raw_stack.size(); i++){
+        for(int i = 0; i < size; i++){
         	raw_stack_y_ptr.push_back( raw_stack[i].ptr<Vec3b>(y) );
         }
 

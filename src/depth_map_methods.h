@@ -46,6 +46,7 @@ public:
     //Constructor
     image_stack(char* img_dir,
                 int threshold,
+                int size,
                 int scaled_width,
                 int scaled_height);
 
@@ -56,7 +57,7 @@ public:
     void add(char* image_path);
 
     //Function for generating a depth map from a focus stack processed with a focus measure
-    int create_depth_map();
+    void create_depth_map();
 
     //Function for determining the focus maximum of a pixel
     //using coarse depth esstimation method
