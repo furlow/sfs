@@ -70,9 +70,9 @@ class Program(QDialog):
         dof_label = QLabel("Depth of Field")
         self.focusSlider = QSlider(Qt.Horizontal)
         self.dofSlider = QSlider(Qt.Horizontal)
-        self.focusSlider.setMaximum(18)
+        self.focusSlider.setMaximum(self.stack.size)
         self.focusSlider.setMinimum(0)
-        self.dofSlider.setMaximum(18)
+        self.dofSlider.setMaximum(self.stack.size)
         self.dofSlider.setMinimum(0)
 
         #Align the widgets in their containers
