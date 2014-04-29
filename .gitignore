@@ -44,6 +44,8 @@ laplacian comparrison/
 other images/
 photo_shoot/
 stack/
+src/build/
+src/depth_map_methods_py.cpp
 
 #images
 *.jpg
