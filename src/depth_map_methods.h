@@ -44,21 +44,23 @@ class sum_modified_laplacian: public focus_measure
 class image_stack{
 public:
     //Constructor
-    image_stack(int height, int width, int size, int threshold ,char* output_img_dir,
-    int scaled_width, int scaled_height);
+    image_stack(char* img_dir,
+                int threshold,
+                int scaled_width,
+                int scaled_height);
 
     //Function for loading already computed depth map and fused image
-    void load(char* numpy_depth_map, char* numpy_focused);
+    void load();
 
     //This function is used to add an image to the stack
     void add(char* image_path);
 
     //Function for generating a depth map from a focus stack processed with a focus measure
-    void create_depth_map(char* out_img);
+    void create_depth_map();
 
     //Function for determining the focus maximum of a pixel
     //using coarse depth esstimation method
-    inline float coarse_depth_esstimation(int y, int x);
+    inline char coarse_depth_esstimation(int y, int x);
 
     //Function for determing the focus maximum of a pixel
     //using guassian interpolation
@@ -69,13 +71,21 @@ public:
     (float Fm, float Fmp, float Fmm, int dm, int dmp, int dmm);
 
     //Function for generating an all in focus image
-    void fuse_focus(char* out_img);
+    void fuse_focus();
 
     //Function for artificially refocusing an image
-    void refocus(int depth_of_feild, int depth_focus_point, char* out_img);
+    void refocus(int in_depth_of_feild, int in_focus_depth);
 
     //Function for generating blurred images for use in the refocus algorithm
     void generate_blurred_images();
+
+    //Function used to map pointers from scaled numpy image data for use in the
+    //C++ code
+    void allocate( char* numpy_depth_map,
+                                char* numpy_focused,
+                                char* numpyrefocused,
+                                int in_scaled_width,
+                                int in_scaled_height);
 
     //Function to set resize parameters for output display size
     void resize(int in_scaled_width, int in_scaled_height);
@@ -90,13 +100,14 @@ private:
     int scaled_height;
     int rows_double;
     int cols_double;
-    int size;
+    int depth_of_feild;
+    int focus_depth;
     float threshold;
-    string output_img_dir;
+    string img_dir;
     vector<Mat> raw_stack;
     vector<Mat> focus_map_stack;
     vector<Mat> blurred;
-    sum_modified_laplacian SML;
+    sum_modified_laplacian* SML;
     Mat focused;
     Mat refocused;
     Mat depth_map;

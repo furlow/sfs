@@ -7,26 +7,49 @@
 using namespace std;
 
 //image stack constructor
-image_stack::image_stack(int height, int width, int size, int threshold, char* output_img_dir, int scaled_width, int scaled_height):
-height(height), width(width), size(size), threshold(threshold) , output_img_dir(output_img_dir), SML(height, width, 9), scaled_width(scaled_width), scaled_height(scaled_height)
-{
-    depth_map = Mat(height, width, CV_8U);
-    focused = Mat(height, width, CV_8UC3);
-    refocused = Mat(height, width, CV_8UC3);
-    focused_scaled = Mat(scaled_height, scaled_width, CV_8UC3);
-    depth_map_scaled = Mat(scaled_height, scaled_width, CV_8UC3);
-}
+image_stack::image_stack(char* img_dir,
+                        int threshold,
+                        int scaled_width,
+                        int scaled_height):
+                        threshold(threshold) ,
+                        img_dir(img_dir),
+                        scaled_width(scaled_width),
+                        scaled_height(scaled_height){
+                        }
 
 //For loading already computed depth map and fused image
-void image_stack::load(char* numpy_depth_map, char* numpy_focused)
+void image_stack::load()
 {
-    depth_map = imread(output_img_dir + "depth_map.png", CV_LOAD_IMAGE_GRAYSCALE);
-    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
-    imgconv::matgray2numpy(numpy_depth_map, depth_map_scaled);
+    depth_map = imread(img_dir + "output/" + "depth_map.png", CV_LOAD_IMAGE_GRAYSCALE);
+    namedWindow("win1");
+    imshow("win1", depth_map);
+    cout << "depth map type " << depth_map.type() << endl;
+    cout << "scaled height " << scaled_width << endl;
+    cout << "scaled width " << scaled_height << endl;
+    cv::resize(depth_map, dst, Size(scaled_width, scaled_height));
+    cout << "Copying to depth_map_Scaled" << scaled_height << endl;
+    depth_map_scaled = dst;
 
-    focused = imread(output_img_dir + "fused_focus.png");
-    cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
-    imgconv::mat2numpy(numpy_focused, focused_scaled);
+    focused = imread(img_dir + "output/" + "fused_focus.png");
+    cv::resize(focused, focused_scaled, Size(scaled_height, scaled_width));
+
+    generate_blurred_images();
+}
+
+//Function used to map pointers from scaled numpy image data for use in the
+//C++ code
+void image_stack::allocate(char* numpy_depth_map,
+                            char* numpy_focused,
+                            char* numpy_refocused,
+                            int in_scaled_width,
+                            int in_scaled_height)
+{
+    cout << "Allocate" << endl;
+    scaled_height = in_scaled_height;
+    scaled_width = in_scaled_width;
+    depth_map_scaled = Mat( scaled_height, scaled_width, CV_8U, numpy_depth_map);
+    focused_scaled = Mat( scaled_height, scaled_width, CV_8UC3, numpy_focused);
+    refocused = Mat( scaled_height, scaled_width, CV_8UC3, numpy_refocused);
 }
 
 //This function is used to add an image to the stack
@@ -43,10 +66,19 @@ void image_stack::add(char* image_path)
 
     colour_image = imread(image_path);
 
-    final=clock()-init;
-    cout << "Read image " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    if(raw_stack.size() == 0)
+    {
+        cout << "Allocating Depth map and creating sum modified laplacian" << endl;
+        height = colour_image.rows;
+        width = colour_image.cols;
+        SML = new sum_modified_laplacian(colour_image.rows, colour_image.cols, 9);
+        depth_map = Mat(colour_image.rows, colour_image.cols, CV_8U);
+    }
 
     raw_stack.push_back(colour_image.clone());
+
+    final=clock()-init;
+    cout << "Read image and push into stack" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 
     init=clock();
 
@@ -54,11 +86,11 @@ void image_stack::add(char* image_path)
     gray_image.convertTo(img_32f, CV_32F);
 
     final=clock()-init;
-    cout << "Convert image to float " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
+    cout << "Convert image to gray float " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
 
     init=clock();
 
-    focus_map_stack.push_back(SML(img_32f).clone());
+    focus_map_stack.push_back((*SML)(img_32f).clone());
 
     final=clock()-init;
     cout << "Run SML and push into the stack " << (double)final / ((double)CLOCKS_PER_SEC)
@@ -66,7 +98,7 @@ void image_stack::add(char* image_path)
 }
 
 //Function for determining the focus maximum of a pixel
-inline float image_stack::coarse_depth_esstimation(int y, int x)
+inline char image_stack::coarse_depth_esstimation(int y, int x)
 {
     int max_focus_depth = 0;
     float max_focus = 0;
@@ -74,12 +106,12 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
     for(int z = 0; z < focus_map_stack.size(); z++)
     {
 
-        float* focus = focus_map_stack[z].ptr<float>(y,x);
+        float focus = focus_map_stack[z].at<float>(y,x);
 
-        if( *focus > max_focus)
+        if( focus > max_focus)
         {
             max_focus_depth = z;
-            max_focus = *focus;
+            max_focus = focus;
         }
     }
 
@@ -89,7 +121,7 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
 	}
 	else
 	{
-		return size - 1;
+		return focus_map_stack.size() - 1;
 	}
 
 }
@@ -155,7 +187,7 @@ inline float image_stack::coarse_depth_esstimation(int y, int x)
 }*/
 
 //Function for generating a depth map
-void image_stack::create_depth_map(char* out_img)
+void image_stack::create_depth_map()
 {
     /*
     for(int z = 0; z < stack.size(); z++)
@@ -185,18 +217,22 @@ void image_stack::create_depth_map(char* out_img)
     //Scale the depth range from 0 to 255
     //depth_map = depth_map * (255 / (size - 1));
 
+    cv::resize(depth_map, dst, Size(), 0.2, 0.2);
+    namedWindow( "Depth Map", WINDOW_AUTOSIZE );
+    imshow("Depth Map", dst);
+    waitKey(0);
+
     //Save the image to file
     cout << "Saving depth map to file" << endl;
-    imwrite( output_img_dir + "depth_map.png", depth_map);
+    imwrite( img_dir + "output/" + "depth_map.png", depth_map);
 
-    //resize(dst, dst, Size(), 0.2, 0.2);
-    //namedWindow( "Depth Map", WINDOW_AUTOSIZE );
-    //imshow("Depth Map", dst);
-    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
-    imgconv::matgray2numpy(out_img, depth_map_scaled);
+
+    cout << "Rescaling image" << endl;
+    cv::resize(depth_map, dst, Size(scaled_width, scaled_height));
+    depth_map_scaled = dst;
 }
 
-void image_stack::fuse_focus(char* out_img){
+void image_stack::fuse_focus(){
 
     Vector<Vec3b*> raw_stack_y_ptr;
 
@@ -208,7 +244,7 @@ void image_stack::fuse_focus(char* out_img){
         Vec3b* focused_y_ptr = focused.ptr<Vec3b>(y);
         char* depth_map_y_ptr = depth_map.ptr<char>(y);
 
-        for(int i = 0; i < size; i++){
+        for(int i = 0; i < raw_stack.size(); i++){
         	raw_stack_y_ptr.push_back( raw_stack[i].ptr<Vec3b>(y) );
         }
 
@@ -233,10 +269,10 @@ void image_stack::fuse_focus(char* out_img){
 
     //Save the fused focus image to file
     cout << "Saving fused image to file" << endl;
-    imwrite( output_img_dir + "fused_focus.png", focused);
+    imwrite( img_dir + "output/" + "fused_focus.png", focused);
 
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
-    imgconv::mat2numpy(out_img, focused_scaled);
+    generate_blurred_images();
 }
 
 void image_stack::generate_blurred_images(){
@@ -245,7 +281,7 @@ void image_stack::generate_blurred_images(){
     init=clock();
 
     //for loop which blurs the infocus image from 0 now blur to the max blur required
-    for(int z = 0; z < size; z++){
+    for(int z = 0; z < raw_stack.size(); z++){
     	GaussianBlur(focused_scaled, dst, Size(z * 2 + 1, z * 2 + 1), 0, 0);
     	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
     	blurred.push_back(dst.clone());
@@ -257,19 +293,19 @@ void image_stack::generate_blurred_images(){
 }
 
 //Function used to artificially refocus an image
-void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_img){
+void image_stack::refocus(int in_depth_of_field, int in_focus_depth){
 
 	clock_t init, final;
     init=clock();
 
-    depth_map_scaled.convertTo(depth_map_scaled, CV_8S);
-    Mat defocus_map = abs(depth_map_scaled - depth_focus_point);
+    depth_of_feild = in_depth_of_field;
+    focus_depth = in_focus_depth;
 
-	if(blurred.size() != size) generate_blurred_images();
+    Mat defocus_map = abs(depth_map_scaled - focus_depth);
 
-    Vec3b* blurred_stack_y_ptr[size];
+    Vec3b* blurred_stack_y_ptr[raw_stack.size()];
 
-    //for loop which selects the correct pixels based on the depth map value
+    //For loop which selects the correct pixels based on the depth map value
     for(int y = 0; y < scaled_height; y++)
     {
 
@@ -277,7 +313,7 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
         char* defocus_map_y_ptr = defocus_map.ptr<char>(y);
 
 
-        for(int i = 0; i < size; i++)
+        for(int i = 0; i < raw_stack.size(); i++)
         {
         	blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
         }
@@ -292,7 +328,6 @@ void image_stack::refocus(int depth_of_field, int depth_focus_point, char* out_i
 
     final = clock() - init;
     cout << "Refocus image" << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-    imgconv::mat2numpy(out_img, refocused);
 }
 
 //This function is most likely obsolete
@@ -387,7 +422,8 @@ Mat sum_modified_laplacian::operator()(Mat& image){
     return SML;
 }
 
-void imgconv::mat2numpy(char* numpy_img, Mat& mat_img){
+void imgconv::mat2numpy(char* numpy_img, Mat& mat_img)
+{
 
     for(int y = 0; y < mat_img.rows; y++){
 
@@ -406,23 +442,13 @@ void imgconv::mat2numpy(char* numpy_img, Mat& mat_img){
 }
 
 void imgconv::matgray2numpy(char* numpy_img, Mat& mat_img){
-
-    for(int y = 0; y < mat_img.rows; y++){
-
-        char* numpy_row_ptr = numpy_img + ( y * mat_img.cols );
-        char* mat_row_ptr = mat_img.ptr<char>(y);
-
-        for(int x = 0; x < mat_img.cols; x++){
-
-            numpy_row_ptr[x] = mat_row_ptr[x];
-        }
-    }
+    numpy_img = mat_img.ptr<char>(0);
 }
 
 void image_stack::resize(int in_scaled_width, int in_scaled_height){
-    scaled_width = in_scaled_width;
-    scaled_height = in_scaled_height;
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
     cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
+    generate_blurred_images();
+    refocus(depth_of_feild, focus_depth);
     cv::resize(refocused, refocused, Size(scaled_width, scaled_height));
 }

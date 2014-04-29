@@ -2,9 +2,8 @@
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
-from shape_from_focus import process_stack
+from depth_map_methods_py import Pyimage_stack
 import matplotlib.pylab as plt
-import cv2
 import numpy2qimage
 
 __appname__ = "Shape From Focus Refocus"
@@ -97,20 +96,16 @@ class Program(QDialog):
         self.focusSlider.sliderMoved.connect(self.refocusImage.valueRefocus)
         self.refocusImage.focusChanged.connect(self.focusSlider.setValue)
 
+#Convert numpy to pixmap image TODO move to library
 def numpy2qpixmap(cvBGRImg):
-    #convert from BGR to RGB
-    #cvBGRImg = cv2.cvtColor(cvBGRImg, cv2.cv.CV_BGR2RGB)
-
-    #convert numpy to pixmap image
     qimg = numpy2qimage.toQImage(cvBGRImg)
     Qpixmap_Img = QPixmap.fromImage(qimg)
-
     return Qpixmap_Img
 
 def main():
     sys.argv[0] = "Shape From Focus"
     img_dir = sys.argv[1]
-    stack  = process_stack(img_dir)
+    stack = Pyimage_stack(img_dir, 2000, 600, 400)
     app = QApplication(sys.argv)
     form = Program(stack)
     form.show()
