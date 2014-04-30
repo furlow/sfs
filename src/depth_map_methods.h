@@ -74,6 +74,8 @@ public:
     //Function for generating an all in focus image
     void fuse_focus();
 
+    void setDefocus(int in_defocus);
+
     //Function for artificially refocusing an image
     void refocus(int in_depth_of_feild, int in_focus_depth);
 
@@ -106,6 +108,7 @@ private:
     int cols_double;
     int depth_of_feild;
     int focus_depth;
+    int defocus;
     float threshold;
     string img_dir;
     vector<Mat> raw_stack;

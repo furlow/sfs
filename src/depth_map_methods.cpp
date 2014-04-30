@@ -15,6 +15,7 @@ image_stack::image_stack(char* img_dir,
                         int scaled_height):
                         threshold(threshold),
                         size(size),
+                        defocus(1),
                         img_dir(img_dir),
                         scaled_width(scaled_width),
                         scaled_height(scaled_height){
@@ -222,6 +223,11 @@ void image_stack::fuse_focus()
     generate_blurred_images();
 }
 
+void image_stack::setDefocus(int in_defocus){
+    defocus = in_defocus;
+    generate_blurred_images();
+}
+
 //Function which blurs the infocus image from 0 blur to the max blur required
 void image_stack::generate_blurred_images()
 {
@@ -232,7 +238,7 @@ void image_stack::generate_blurred_images()
     blurred.clear();
 
     for(int z = 0; z < size; z++){
-    	GaussianBlur(focused_scaled, dst, Size(z * defocus_level * 2 + 1, z * defocus_level * 2 + 1), 0, 0);
+    	GaussianBlur(focused_scaled, dst, Size(z * defocus * 2 + 1, z * defocus* 2 + 1), 0, 0);
     	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
     	blurred.push_back(dst.clone());
     }

@@ -34,6 +34,7 @@ cdef extern from "depth_map_methods.h":
 		void add(char*)
 		void create_depth_map()
 		void fuse_focus()
+		void setDefocus(int)
 		void refocus(int, int)
 		void resize(int, int)
 		void allocate(char*, char*, char*, int, int)
@@ -124,6 +125,10 @@ cdef class Pyimage_stack:
 
 	def setDof(self, int depth_of_field):
 		self.depth_of_field = depth_of_field
+		self.thisptr.refocus(self.depth_of_field, self.depth)
+
+	def setDefocus(self, int defocus):
+		self.thisptr.setDefocus(defocus)
 		self.thisptr.refocus(self.depth_of_field, self.depth)
 
 	def refocus(self, int focus_depth):

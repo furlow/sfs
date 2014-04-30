@@ -51,6 +51,11 @@ class refocusImage(QLabel):
         self.stack.setDof(depth_of_feild)
         self.updateImage()
 
+    def setDefocus(self, defocus):
+        print "setDefocus, defocus: ", defocus
+        self.stack.setDefocus(defocus)
+        self.updateImage()
+
     def mousePressEvent(self, QMouseEvent):
         print "mousePressEvent"
         self.mouseRefocus(QMouseEvent)
@@ -75,12 +80,16 @@ class Program(QDialog):
         #Set up the refocusing sliders
         focus_label = QLabel("Focus depth")
         dof_label = QLabel("Depth of Field")
+        defocus_label = QLabel("Defocus Amount")
         self.focusSlider = QSlider(Qt.Horizontal)
         self.dofSlider = QSlider(Qt.Horizontal)
+        self.defocusSlider = QSlider(Qt.Horizontal)
         self.focusSlider.setMaximum(self.stack.size)
         self.focusSlider.setMinimum(0)
         self.dofSlider.setMaximum(self.stack.size)
         self.dofSlider.setMinimum(0)
+        self.defocusSlider.setMaximum(5)
+        self.defocusSlider.setMinimum(1)
 
         #Align the widgets in their containers
         options_layout = QVBoxLayout()
@@ -88,6 +97,8 @@ class Program(QDialog):
         options_layout.addWidget(self.focusSlider)
         options_layout.addWidget(dof_label)
         options_layout.addWidget(self.dofSlider)
+        options_layout.addWidget(defocus_label)
+        options_layout.addWidget(self.defocusSlider)
 
 
         #Create a refocused_image
@@ -103,6 +114,7 @@ class Program(QDialog):
         self.focusSlider.sliderMoved.connect(self.refocusImage.valueRefocus)
         self.refocusImage.focusChanged.connect(self.focusSlider.setValue)
         self.dofSlider.sliderMoved.connect(self.refocusImage.setDof)
+        self.defocusSlider.sliderMoved.connect(self.refocusImage.setDefocus)
 
 #Convert numpy to pixmap image TODO move to library
 def numpy2qpixmap(numpyImg):
@@ -113,7 +125,7 @@ def numpy2qpixmap(numpyImg):
 def main():
     sys.argv[0] = "Shape From Focus"
     img_dir = sys.argv[1]
-    stack = Pyimage_stack(img_dir, 2000, 600, 400, ALIGN_ON, RECREATE)
+    stack = Pyimage_stack(img_dir, 2000, 600, 400, ALIGN_ON, RELOAD)
     app = QApplication(sys.argv)
     form = Program(stack)
     form.show()
