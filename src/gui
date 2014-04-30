@@ -6,6 +6,11 @@ from depth_map_methods_py import Pyimage_stack
 import matplotlib.pylab as plt
 import numpy2qimage
 
+RELOAD = 1
+RECREATE = 0
+ALIGN_ON = 1
+ALIGN_OFF = 0
+
 __appname__ = "Shape From Focus Refocus"
 
 class refocusImage(QLabel):
@@ -108,7 +113,7 @@ def numpy2qpixmap(numpyImg):
 def main():
     sys.argv[0] = "Shape From Focus"
     img_dir = sys.argv[1]
-    stack = Pyimage_stack(img_dir, 5000, 600, 400)
+    stack = Pyimage_stack(img_dir, 2000, 600, 400, ALIGN_ON, RECREATE)
     app = QApplication(sys.argv)
     form = Program(stack)
     form.show()

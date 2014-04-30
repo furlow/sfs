@@ -229,8 +229,10 @@ void image_stack::generate_blurred_images()
 	clock_t init, final;
     init=clock();
 
+    blurred.clear();
+
     for(int z = 0; z < size; z++){
-    	GaussianBlur(focused_scaled, dst, Size(z * 2 + 1, z * 2 + 1), 0, 0);
+    	GaussianBlur(focused_scaled, dst, Size(z * defocus_level * 2 + 1, z * defocus_level * 2 + 1), 0, 0);
     	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
     	blurred.push_back(dst.clone());
     }

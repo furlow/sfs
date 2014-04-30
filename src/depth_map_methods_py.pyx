@@ -21,6 +21,11 @@ tmp_cropped = "tmp_cropped/"
 output = "output/"
 tmp_copy = "tmp_copy/"
 
+RELOAD = 1
+RECREATE = 0
+ALIGN_ON = 1
+ALIGN_OFF = 0
+
 #Image stack class definition
 cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
@@ -50,13 +55,15 @@ cdef class Pyimage_stack:
 				  char* img_dir,
 				  int threshold,
 				  int scaled_width,
-				  int scaled_height):
+				  int scaled_height,
+				  int align_toggle,
+				  int depth_map_toggle):
 
 		self.scaled_height = scaled_height
 		self.scaled_width = scaled_width
 		self.img_dir = img_dir
 		self.depth_of_field = 0
-		self.depth = -1
+		self.depth = 0
 
 		if os.path.exists(self.img_dir + output + 'attributes.txt'):
 			with open(img_dir + output + 'attributes.txt', 'r') as infile:
@@ -69,8 +76,12 @@ cdef class Pyimage_stack:
 				json.dump(self.size, outfile)
 
 		if not os.path.exists(self.img_dir + tmp_copy) \
-		and not os.path.exists(self.img_dir + tmp_cropped):
+		and not os.path.exists(self.img_dir + tmp_cropped) \
+		and align_toggle == ALIGN_ON:
 			self.align_images()
+
+		if not os.path.exists(self.img_dir + output):
+			os.mkdir(self.img_dir + output)
 
 		self.thisptr = new image_stack(self.img_dir,
 										threshold,
@@ -78,14 +89,19 @@ cdef class Pyimage_stack:
 										scaled_width,
 										scaled_height)
 
+
 		self.allocate()
 
 		if os.path.exists(self.img_dir + output + 'depth_map.png') \
-		and os.path.exists(self.img_dir + output + 'fused_focus.png'):
-			# Load pre computed files
+		and os.path.exists(self.img_dir + output + 'fused_focus.png') \
+		and depth_map_toggle == RELOAD:
 			self.thisptr.load(self.size)
+		elif align_toggle == ALIGN_ON:
+			self.compute(self.img_dir + tmp_cropped)
+		elif align_toggle == ALIGN_OFF:
+			self.compute(self.img_dir)
 		else:
-			self.compute()
+			raise("Error couldn't determine how to load or compute images")
 
 	def __dealloc__(self):
 		del self.thisptr
@@ -93,14 +109,14 @@ cdef class Pyimage_stack:
 	def add(self, char* image_path):
 		self.thisptr.add(image_path)
 
-	def compute(self):
-		image_files = [image_file for image_file in os.listdir(self.img_dir + tmp_cropped) if image_file.endswith('.tif')]
+	def compute(self, img_dir):
+		image_files = [image_file for image_file in os.listdir(img_dir) if image_file.endswith('.tif') or image_file.endswith('.JPG')]
 		sort.sort_nicely(image_files)
 
 		#Add the files to stack
 		for image_file in image_files:
 			print "Adding " + image_file
-			self.add(self.img_dir + tmp_cropped + image_file)
+			self.add(img_dir + image_file)
 
 		#Process the stack and create the depth map and fused images
 		self.thisptr.create_depth_map()
@@ -143,12 +159,11 @@ cdef class Pyimage_stack:
 		sort.sort_nicely(image_files)
 
 		print('Creating temporary directories...')
-		try:
+
+		if not os.path.exists(self.img_dir + tmp_copy):
 			os.mkdir(self.img_dir + tmp_copy)
+		if not os.path.exists(self.img_dir + tmp_cropped):
 			os.mkdir(self.img_dir + tmp_cropped)
-			os.mkdir(self.img_dir + output)
-		except:
-			pass
 
 		os_type = sys.platform
 		if os_type == 'darwin':
