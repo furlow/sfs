@@ -14,7 +14,7 @@ setup(
                               include_dirs = [".","/usr/local/include/opencv2", "/usr/local/include", numpy.get_include()],
                               language = "c++",
                               library_dirs = ['/usr/local/lib'],
-                              libraries = ['opencv_core', 'opencv_highgui', 'opencv_imgproc'],
+                              libraries = ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_legacy'],
                               extra_compile_args = ['-Wno-error=unused-command-line-argument-hard-error-in-future'])
                              ],
       cmdclass = {'build_ext': build_ext},

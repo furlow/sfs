@@ -3,6 +3,7 @@
 #include <cmath>
 #include <exception>
 #include <vector>
+#include "opencv2/legacy/legacy.hpp"
 
 using namespace std;
 
@@ -17,6 +18,8 @@ image_stack::image_stack(char* img_dir,
                         img_dir(img_dir),
                         scaled_width(scaled_width),
                         scaled_height(scaled_height){
+
+                            cout << "Threshold: " << threshold << endl;
                         }
 
 //For loading already computed depth map and fused image
@@ -30,6 +33,7 @@ void image_stack::load(int in_size)
     cv::cvtColor(focused, focused, CV_BGR2RGB);
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
 
+    cluster();
     generate_blurred_images();
 }
 
@@ -59,7 +63,7 @@ void image_stack::add(char* image_path)
     {
         height = colour_image.rows;
         width = colour_image.cols;
-        SML = new sum_modified_laplacian(colour_image.rows, colour_image.cols, 13);
+        SML = new sum_modified_laplacian(colour_image.rows, colour_image.cols, 21);
         depth_map = Mat(colour_image.rows, colour_image.cols, CV_8U);
         focused = Mat(colour_image.rows, colour_image.cols, CV_8UC3);
     }
@@ -178,10 +182,12 @@ void image_stack::create_depth_map()
 
     cout << "Saving depth map to file" << endl;
     imwrite( img_dir + "output/" + "depth_map.png", depth_map);
+    cluster();
     cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
 }
 
-void image_stack::fuse_focus(){
+void image_stack::fuse_focus()
+{
 
     Vector<Vec3b*> raw_stack_y_ptr;
 
@@ -217,7 +223,8 @@ void image_stack::fuse_focus(){
 }
 
 //Function which blurs the infocus image from 0 blur to the max blur required
-void image_stack::generate_blurred_images(){
+void image_stack::generate_blurred_images()
+{
 
 	clock_t init, final;
     init=clock();
@@ -234,12 +241,15 @@ void image_stack::generate_blurred_images(){
 }
 
 //Function used to artificially refocus an image
-void image_stack::refocus(int in_depth_of_field, int in_focus_depth){
+void image_stack::refocus(int in_depth_of_field, int in_focus_depth)
+{
 
     depth_of_feild = in_depth_of_field;
     focus_depth = in_focus_depth;
 
     Mat defocus_map = abs(depth_map_scaled - focus_depth);
+    defocus_map = defocus_map - depth_of_feild;
+    cv::threshold( defocus_map, defocus_map, 0.0, 0.0, THRESH_TOZERO );
 
     Vec3b* blurred_stack_y_ptr[size];
 
@@ -266,7 +276,8 @@ void image_stack::refocus(int in_depth_of_field, int in_focus_depth){
 }
 
 //This function is most likely obsolete
-inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize){
+inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize)
+{
 
 	int ksize_sq = pow(ksize*2 + 1, 2);
     int col_temp, row_temp;
@@ -317,7 +328,8 @@ inline void image_stack::boxfilter_single_pixel(int y, int x, int ksize){
 
 /* Sum Modified Laplacian focus measure
  */
-Mat sum_modified_laplacian::operator()(Mat& image){
+Mat sum_modified_laplacian::operator()(Mat& image)
+{
 
     for(int y = step; y < height - step; y++)
     {
@@ -341,10 +353,29 @@ Mat sum_modified_laplacian::operator()(Mat& image){
     return SML;
 }
 
-void image_stack::resize(int in_scaled_width, int in_scaled_height){
+void image_stack::resize(int in_scaled_width, int in_scaled_height)
+{
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
     cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
     generate_blurred_images();
     refocus(depth_of_feild, focus_depth);
     cv::resize(refocused, refocused, Size(scaled_width, scaled_height));
+}
+
+void image_stack::cluster()
+{
+
+    cout << "Apply the bilateralFilter" << endl;
+    int morph_size = 5;
+    dst = depth_map * (255/size - 1);
+    cv::resize(dst, dst, Size(scaled_width, scaled_height));
+    namedWindow("depth map");
+    imshow("depth map", dst);
+
+    Mat element = getStructuringElement( MORPH_ELLIPSE, Size( 2*morph_size + 1, 2*morph_size+1 ) );
+    morphologyEx(depth_map, depth_map, MORPH_CLOSE, element);
+    dst = depth_map * (255/size - 1);
+    cv::resize(dst, dst, Size(scaled_width, scaled_height));
+    namedWindow("depth map bilateral");
+    imshow("depth map bilateral", dst);
 }

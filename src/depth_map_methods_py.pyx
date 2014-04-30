@@ -39,11 +39,13 @@ cdef class Pyimage_stack:
 	cdef public int scaled_height
 	cdef public int scaled_width
 	cdef public int depth
+	cdef public int depth_of_field
 	cdef public int size
 	cdef public np.ndarray focused_image
 	cdef public np.ndarray refocused_image
 	cdef public np.ndarray depth_map
 	cdef img_dir
+
 	def __cinit__(self,
 				  char* img_dir,
 				  int threshold,
@@ -53,6 +55,8 @@ cdef class Pyimage_stack:
 		self.scaled_height = scaled_height
 		self.scaled_width = scaled_width
 		self.img_dir = img_dir
+		self.depth_of_field = 0
+		self.depth = -1
 
 		if os.path.exists(self.img_dir + output + 'attributes.txt'):
 			with open(img_dir + output + 'attributes.txt', 'r') as infile:
@@ -102,15 +106,19 @@ cdef class Pyimage_stack:
 		self.thisptr.create_depth_map()
 		self.thisptr.fuse_focus()
 
-	def refocus(self, int depth_of_field, int focus_depth):
+	def setDof(self, int depth_of_field):
+		self.depth_of_field = depth_of_field
+		self.thisptr.refocus(self.depth_of_field, self.depth)
+
+	def refocus(self, int focus_depth):
 		self.depth = focus_depth
-		self.thisptr.refocus(1, self.depth)
+		self.thisptr.refocus(self.depth_of_field, self.depth)
 
 	def refocus_by_point(self, int y, int x):
-		depth = self.depth_map[y, x]
-		print "Depth: ", depth
-		self.refocus(1, depth)
-		return depth
+		self.depth = self.depth_map[y, x]
+		print "Depth: ", self.depth
+		self.thisptr.refocus(self.depth_of_field, self.depth)
+		return self.depth
 
 	def resize(self, int in_scaled_width , int in_scaled_height):
 		self.scaled_height = in_scaled_height

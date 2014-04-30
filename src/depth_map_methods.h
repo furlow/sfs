@@ -94,6 +94,8 @@ public:
     //Function used to apply boxfilter blur to a single pixel
     inline void boxfilter_single_pixel(int y, int x, int ksize);
 
+    void cluster();
+
 private:
     int height;
     int width;
