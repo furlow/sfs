@@ -143,11 +143,16 @@ cdef class Pyimage_stack:
 		return self.depth
 
 	def refocus_between_points(self, int y1, int x1, int y2, int x2):
-		focus_depth_1 = self.depth_map[y1, x1]
-		focus_depth_2 = self.depth_map[y2, x2]
-		self.depth_of_field = abs(focus_depth_1 - focus_depth_2)
+		cdef char focus_depth_1 = self.depth_map[y1, x1]
+		cdef char focus_depth_2 = self.depth_map[y2, x2]
+		print "focus depth 1:", focus_depth_1
+		print "focus depth 2:", focus_depth_2
+		self.depth_of_field = abs(focus_depth_1 - focus_depth_2) / 2
 		self.depth = (focus_depth_1 + focus_depth_2) / 2
+		print "depth: ", self.depth
+		print "depth of field", self.depth_of_field
 		self.thisptr.refocus(self.depth_of_field, self.depth)
+	return (self.depth, self.depth_of_field)
 
 	def refocus_multiple(self, int y1, int x1, int y2, int x2):
 		focus_depth_1 = self.depth_map[y1, x1]
