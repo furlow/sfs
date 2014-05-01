@@ -16,6 +16,7 @@ __appname__ = "Shape From Focus Refocus"
 class refocusImage(QLabel):
 
     focusChanged = Signal(int)
+    dofChanged = Signal(int)
 
     def __init__(self, stack, parent = None):
         QLabel.__init__(self)
@@ -58,8 +59,9 @@ class refocusImage(QLabel):
                     self.stack.refocus_multiple(self.point1.y(), self.point1.x(), self.point2.y(), self.point2.x())
                 elif self.mode.find("Between Point Focus") == 0:
                     print "Between Point Focus"
-                    depth = self.stack.refocus_between_points(self.point1.y(), self.point1.x(), self.point2.y(), self.point2.x())
+                    depth, depth_of_feild = self.stack.refocus_between_points(self.point1.y(), self.point1.x(), self.point2.y(), self.point2.x())
                     self.focusChanged.emit(depth)
+                    self.dofChanged.emit(depth_of_feild)
                 self.updateImage()
 
     def valueRefocus(self, depth):
@@ -145,6 +147,7 @@ class Program(QDialog):
         self.focusSlider.sliderMoved.connect(self.refocusImage.valueRefocus)
         self.refocusImage.focusChanged.connect(self.focusSlider.setValue)
         self.dofSlider.sliderMoved.connect(self.refocusImage.setDof)
+        self.refocusImage.dofChanged.connect(self.dofSlider.setValue)
         self.defocusSlider.sliderMoved.connect(self.refocusImage.setDefocus)
         self.mode.currentIndexChanged[str].connect(self.refocusImage.setRefocusMode)
 

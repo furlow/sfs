@@ -152,7 +152,7 @@ cdef class Pyimage_stack:
 		print "depth: ", self.depth
 		print "depth of field", self.depth_of_field
 		self.thisptr.refocus(self.depth_of_field, self.depth)
-	return (self.depth, self.depth_of_field)
+		return self.depth, self.depth_of_field
 
 	def refocus_multiple(self, int y1, int x1, int y2, int x2):
 		focus_depth_1 = self.depth_map[y1, x1]
