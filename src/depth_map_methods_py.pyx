@@ -36,6 +36,7 @@ cdef extern from "depth_map_methods.h":
 		void fuse_focus()
 		void setDefocus(int)
 		void refocus(int, int)
+		void refocus_multiple(int, int)
 		void resize(int, int)
 		void allocate(char*, char*, char*, int, int)
 
@@ -140,6 +141,18 @@ cdef class Pyimage_stack:
 		print "Depth: ", self.depth
 		self.thisptr.refocus(self.depth_of_field, self.depth)
 		return self.depth
+
+	def refocus_between_points(self, int y1, int x1, int y2, int x2):
+		focus_depth_1 = self.depth_map[y1, x1]
+		focus_depth_2 = self.depth_map[y2, x2]
+		self.depth_of_field = abs(focus_depth_1 - focus_depth_2)
+		self.depth = (focus_depth_1 + focus_depth_2) / 2
+		self.thisptr.refocus(self.depth_of_field, self.depth)
+
+	def refocus_multiple(self, int y1, int x1, int y2, int x2):
+		focus_depth_1 = self.depth_map[y1, x1]
+		focus_depth_2 = self.depth_map[y2, x2]
+		self.thisptr.refocus_multiple(focus_depth_1, focus_depth_2)
 
 	def resize(self, int in_scaled_width , int in_scaled_height):
 		self.scaled_height = in_scaled_height

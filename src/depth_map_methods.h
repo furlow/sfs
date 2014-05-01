@@ -50,6 +50,14 @@ public:
                 int scaled_width,
                 int scaled_height);
 
+    //Function used to map pointers from scaled numpy image data for use in the
+    //C++ code
+    void allocate( char* numpy_depth_map,
+                                char* numpy_focused,
+                                char* numpyrefocused,
+                                int in_scaled_width,
+                                int in_scaled_height);
+
     //Function for loading already computed depth map and fused image
     void load(int in_size);
 
@@ -74,21 +82,24 @@ public:
     //Function for generating an all in focus image
     void fuse_focus();
 
+    //Function for generating blurred images for use in the refocus algorithm
+    void generate_blurred_images();
+
+    //Generates a defocus map used to refocus an image
+    Mat generate_defocus_map(int in_focus_depth, int in_depth_of_feild);
+
+    //This function allows the defocus amount to be set
     void setDefocus(int in_defocus);
 
     //Function for artificially refocusing an image
     void refocus(int in_depth_of_feild, int in_focus_depth);
 
-    //Function for generating blurred images for use in the refocus algorithm
-    void generate_blurred_images();
+    //Refocus an image by suppling a defocus map
+    void refocus(Mat& defocus_map);
 
-    //Function used to map pointers from scaled numpy image data for use in the
-    //C++ code
-    void allocate( char* numpy_depth_map,
-                                char* numpy_focused,
-                                char* numpyrefocused,
-                                int in_scaled_width,
-                                int in_scaled_height);
+    // This function focuses the image at different points providing unrealistic
+    // multiple focus points that would not be possible with real cameras
+    void refocus_multiple(int focus_depth_1, int focus_depth_2);
 
     //Function to set resize parameters for output display size
     void resize(int in_scaled_width, int in_scaled_height);

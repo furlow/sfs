@@ -234,7 +234,6 @@ void image_stack::generate_blurred_images()
 
 	clock_t init, final;
     init=clock();
-
     blurred.clear();
 
     for(int z = 0; z < size; z++){
@@ -248,16 +247,27 @@ void image_stack::generate_blurred_images()
 
 }
 
+//Generates a defocus map used to refocus an image
+Mat image_stack::generate_defocus_map(int in_focus_depth, int in_depth_of_feild){
+    Mat defocus_map = abs(depth_map_scaled - in_focus_depth);
+    defocus_map = defocus_map - in_depth_of_feild;
+    cv::threshold( defocus_map, defocus_map, 0.0, 0.0, THRESH_TOZERO );
+    return defocus_map;
+}
+
 //Function used to artificially refocus an image
 void image_stack::refocus(int in_depth_of_field, int in_focus_depth)
 {
-
     depth_of_feild = in_depth_of_field;
     focus_depth = in_focus_depth;
 
-    Mat defocus_map = abs(depth_map_scaled - focus_depth);
-    defocus_map = defocus_map - depth_of_feild;
-    cv::threshold( defocus_map, defocus_map, 0.0, 0.0, THRESH_TOZERO );
+    Mat defocus_map = generate_defocus_map(in_focus_depth, in_depth_of_field);
+    refocus(defocus_map);
+}
+
+//Function used to artificially refocus an image
+void image_stack::refocus(Mat& defocus_map)
+{
 
     Vec3b* blurred_stack_y_ptr[size];
 
@@ -271,7 +281,7 @@ void image_stack::refocus(int in_depth_of_field, int in_focus_depth)
 
         for(int i = 0; i < size; i++)
         {
-        	blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
+            blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
         }
 
         //Add pointer array of each image row in the raw_stack
@@ -281,6 +291,39 @@ void image_stack::refocus(int in_depth_of_field, int in_focus_depth)
             refocused_y_ptr[x] = blurred_stack_y_ptr[defocus_map_y_ptr[x]][x];
         }
     }
+}
+
+// This function focuses the image at different points providing unrealistic
+// multiple focus points that would not be possible with real cameras
+void image_stack::refocus_multiple(int focus_depth_1, int focus_depth_2)
+{
+    Mat defocus_1 = generate_defocus_map(focus_depth_1, 0);
+    Mat defocus_2 = generate_defocus_map(focus_depth_2, 0);
+    Mat multi_focus(scaled_height, scaled_width, CV_8U);
+
+    //Select the smallest pixels from each array
+    for(int row = 0; row < scaled_height; row++)
+    {
+
+        char* defocus_1_row_ptr = defocus_1.ptr<char>(row);
+        char* defocus_2_row_ptr = defocus_2.ptr<char>(row);
+        char* multi_focus_row_ptr = multi_focus.ptr<char>(row);
+
+        for(int col = 0; col < scaled_width; col++)
+        {
+            if(defocus_1_row_ptr[col] < defocus_2_row_ptr[col])
+            {
+                multi_focus_row_ptr[col] = defocus_1_row_ptr[col];
+            }
+            else
+            {
+                multi_focus_row_ptr[col] = defocus_2_row_ptr[col];
+            }
+        }
+
+    }
+
+    refocus(multi_focus);
 }
 
 //This function is most likely obsolete
@@ -355,7 +398,6 @@ Mat sum_modified_laplacian::operator()(Mat& image)
             abs( 2 * img_ptr[x] - img_ptr_step_minus[x] - img_ptr_step_plus[x]);
         }
     }
-
 
     boxFilter(ML, SML, -1, Size(2*step+1,2*step+1), Point(-1,-1), false);
     return SML;

@@ -17,12 +17,14 @@ class refocusImage(QLabel):
 
     focusChanged = Signal(int)
 
-
     def __init__(self, stack, parent = None):
         QLabel.__init__(self)
 
         self.stack = stack
-        self.depth = 0
+        self.mode = "Single Point Focus"
+        self.points = 0
+        self.point1 = 0
+        self.point2 = 0
 
         #Set up the image pixmap
         self.setMinimumSize(600, 400)
@@ -36,10 +38,29 @@ class refocusImage(QLabel):
 
     def mouseRefocus(self, QMouseEvent):
         pos = QMouseEvent.pos()
-        print "mouseRefocus", pos
-        depth = self.stack.refocus_by_point(pos.y(), pos.x())
-        self.updateImage()
-        self.focusChanged.emit(depth)
+        if self.mode.find("Single Point Focus") == 0:
+            print "Single Point Refocus: ", pos
+            depth = self.stack.refocus_by_point(pos.y(), pos.x())
+            self.updateImage()
+            self.focusChanged.emit(depth)
+        else:
+            if self.points == 0:
+                print "Point 1: ", pos
+                self.point1 = pos
+                self.points = 1
+            elif self.points == 1:
+                print "Point 2: ", pos
+                self.point2 = pos
+                self.points = 0
+
+                if self.mode.find("Double Point Focus") == 0:
+                    print "Double Point Refocus"
+                    self.stack.refocus_multiple(self.point1.y(), self.point1.x(), self.point2.y(), self.point2.x())
+                elif self.mode.find("Between Point Focus") == 0:
+                    print "Between Point Focus"
+                    depth = self.stack.refocus_between_points(self.point1.y(), self.point1.x(), self.point2.y(), self.point2.x())
+                    self.focusChanged.emit(depth)
+                self.updateImage()
 
     def valueRefocus(self, depth):
         print "valueRefocus, depth: ", depth
@@ -69,6 +90,9 @@ class refocusImage(QLabel):
         self.stack.resize(self.width(), self.height())
         self.updateImage()
 
+    def setRefocusMode(self, mode):
+        print "setRefocusMode: ", mode
+        self.mode = mode
 
 class Program(QDialog):
     def __init__(self, stack, parent = None):
@@ -81,6 +105,7 @@ class Program(QDialog):
         focus_label = QLabel("Focus depth")
         dof_label = QLabel("Depth of Field")
         defocus_label = QLabel("Defocus Amount")
+        mode_label = QLabel("Refocus Mode")
         self.focusSlider = QSlider(Qt.Horizontal)
         self.dofSlider = QSlider(Qt.Horizontal)
         self.defocusSlider = QSlider(Qt.Horizontal)
@@ -91,15 +116,21 @@ class Program(QDialog):
         self.defocusSlider.setMaximum(5)
         self.defocusSlider.setMinimum(1)
 
+        #Set up combobox for mode selection
+        self.mode = QComboBox()
+        self.mode.addItem("Single Point Focus")
+        self.mode.addItem("Double Point Focus")
+        self.mode.addItem("Between Point Focus")
+
         #Align the widgets in their containers
         options_layout = QVBoxLayout()
+        options_layout.addWidget(self.mode)
         options_layout.addWidget(focus_label)
         options_layout.addWidget(self.focusSlider)
         options_layout.addWidget(dof_label)
         options_layout.addWidget(self.dofSlider)
         options_layout.addWidget(defocus_label)
         options_layout.addWidget(self.defocusSlider)
-
 
         #Create a refocused_image
         self.refocusImage = refocusImage(stack);
@@ -115,6 +146,7 @@ class Program(QDialog):
         self.refocusImage.focusChanged.connect(self.focusSlider.setValue)
         self.dofSlider.sliderMoved.connect(self.refocusImage.setDof)
         self.defocusSlider.sliderMoved.connect(self.refocusImage.setDefocus)
+        self.mode.currentIndexChanged[str].connect(self.refocusImage.setRefocusMode)
 
 #Convert numpy to pixmap image TODO move to library
 def numpy2qpixmap(numpyImg):
