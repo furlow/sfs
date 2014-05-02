@@ -29,7 +29,7 @@ ALIGN_OFF = 0
 #Image stack class definition
 cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
-		image_stack(char*, int, int, int, int) except +
+		image_stack(char*, int, int, int, int, int) except +
 		void load(int)
 		void add(char*)
 		void create_depth_map()
@@ -56,6 +56,7 @@ cdef class Pyimage_stack:
 	def __cinit__(self,
 				  char* img_dir,
 				  int threshold,
+				  int quantization,
 				  int scaled_width,
 				  int scaled_height,
 				  int align_toggle,
@@ -88,6 +89,7 @@ cdef class Pyimage_stack:
 		self.thisptr = new image_stack(self.img_dir,
 										threshold,
 										self.size,
+										quantization,
 										scaled_width,
 										scaled_height)
 

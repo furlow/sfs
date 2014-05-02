@@ -1,5 +1,6 @@
 #include "depth_map_methods.h"
 #include <time.h>
+#include <unistd.h>
 #include <cmath>
 #include <exception>
 #include <vector>
@@ -11,9 +12,11 @@ using namespace std;
 image_stack::image_stack(char* img_dir,
                         int threshold,
                         int size,
+                        int quantization,
                         int scaled_width,
                         int scaled_height):
                         threshold(threshold),
+                        quantization(quantization),
                         size(size),
                         defocus(1),
                         img_dir(img_dir),
@@ -33,8 +36,6 @@ void image_stack::load(int in_size)
     focused = imread(img_dir + "output/" + "fused_focus.png");
     cv::cvtColor(focused, focused, CV_BGR2RGB);
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
-
-    cluster();
     generate_blurred_images();
 }
 
@@ -194,16 +195,24 @@ void image_stack::create_depth_map()
     //Clear out the focus map stack as the data is no longer needed
     focus_map_stack.clear();
 
-    namedWindow("depth map guassian");
-    cv::resize(depth_map_float, dst, Size(scaled_width, scaled_height));
-    imshow("depth map guassian", dst / (size - 1) );
+    bilateralFilter(depth_map_float.clone(), depth_map_float, 10, 150, 150);
+
 
     depth_map_float.convertTo(depth_map, CV_8U);
+    depth_map_float = depth_map_float / (size - 1);
+    cv::resize(depth_map_float, dst, Size(scaled_width, scaled_height));
+    namedWindow("depth map guassian");
+    imshow("depth map guassian", dst);
+
+    depth_map_float.convertTo(depth_map_quantized, CV_8U, quantization - 1);
+    namedWindow("depth map quantization");
+    cv::resize(depth_map_quantized, dst, Size(scaled_width, scaled_height));
+    imshow("depth map quantization", dst);
 
     cout << "Saving depth map to file" << endl;
     imwrite( img_dir + "output/" + "depth_map.png", depth_map);
-    cluster();
-    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
+    //cluster();
+    cv::resize(depth_map_quantized, depth_map_scaled, Size(scaled_width, scaled_height));
 }
 
 void image_stack::fuse_focus()
@@ -255,7 +264,7 @@ void image_stack::generate_blurred_images()
     init=clock();
     blurred.clear();
 
-    for(int z = 0; z < size; z++){
+    for(int z = 0; z < quantization; z++){
     	GaussianBlur(focused_scaled, dst, Size(z * defocus * 2 + 1, z * defocus* 2 + 1), 0, 0);
     	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
     	blurred.push_back(dst.clone());
@@ -263,7 +272,6 @@ void image_stack::generate_blurred_images()
 
 	final = clock() - init;
     cout << "blured images " << (double)final / ((double)CLOCKS_PER_SEC) << endl;
-
 }
 
 //Generates a defocus map used to refocus an image
@@ -288,7 +296,7 @@ void image_stack::refocus(int in_depth_of_field, int in_focus_depth)
 void image_stack::refocus(Mat& defocus_map)
 {
 
-    Vec3b* blurred_stack_y_ptr[size];
+    Vec3b* blurred_stack_y_ptr[quantization];
 
     //For loop which selects the correct pixels based on the depth map value
     for(int y = 0; y < scaled_height; y++)
@@ -298,7 +306,7 @@ void image_stack::refocus(Mat& defocus_map)
         char* defocus_map_y_ptr = defocus_map.ptr<char>(y);
 
 
-        for(int i = 0; i < size; i++)
+        for(int i = 0; i < quantization; i++)
         {
             blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
         }
@@ -425,26 +433,8 @@ Mat sum_modified_laplacian::operator()(Mat& image)
 void image_stack::resize(int in_scaled_width, int in_scaled_height)
 {
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
-    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
+    cv::resize(depth_map_quantized, depth_map_scaled, Size(scaled_width, scaled_height));
     generate_blurred_images();
     refocus(depth_of_feild, focus_depth);
     cv::resize(refocused, refocused, Size(scaled_width, scaled_height));
-}
-
-void image_stack::cluster()
-{
-
-    cout << "Apply the bilateralFilter" << endl;
-    int morph_size = 5;
-    dst = depth_map * (255/size - 1);
-    cv::resize(dst, dst, Size(scaled_width, scaled_height));
-    namedWindow("depth map");
-    imshow("depth map", dst);
-
-    Mat element = getStructuringElement( MORPH_ELLIPSE, Size( 2*morph_size + 1, 2*morph_size+1 ) );
-    morphologyEx(depth_map, depth_map, MORPH_CLOSE, element);
-    dst = depth_map * (255/size - 1);
-    cv::resize(dst, dst, Size(scaled_width, scaled_height));
-    namedWindow("depth map bilateral");
-    imshow("depth map bilateral", dst);
 }

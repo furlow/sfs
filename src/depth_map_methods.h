@@ -47,6 +47,7 @@ public:
     image_stack(char* img_dir,
                 int threshold,
                 int size,
+                int quantization,
                 int scaled_width,
                 int scaled_height);
 
@@ -107,12 +108,11 @@ public:
     //Function used to apply boxfilter blur to a single pixel
     inline void boxfilter_single_pixel(int y, int x, int ksize);
 
-    void cluster();
-
 private:
     int height;
     int width;
     int size;
+    int quantization;
     int scaled_width;
     int scaled_height;
     int rows_double;
@@ -129,6 +129,7 @@ private:
     Mat focused;
     Mat refocused;
     Mat depth_map;
+    Mat depth_map_quantized;
     Mat focused_scaled;
     Mat depth_map_scaled;
     Mat dst; //temporary storage of an array
