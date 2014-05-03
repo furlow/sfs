@@ -116,10 +116,7 @@ inline float image_stack::gaussian_depth_esstimation(int y, int x)
     for(int z = 2; z < size; z++)
     {
         //find peak
-        if( focus_map_stack[z - 1].at<float>(y, x) > max_focus &&
-            focus_map_stack[z - 1].at<float>(y, x) > focus_map_stack[z].at<float>(y, x) &&
-            focus_map_stack[z - 1].at<float>(y, x) > focus_map_stack[z - 2].at<float>(y, x)
-          )
+        if( focus_map_stack[z - 1].at<float>(y, x) > max_focus )
         {
             max_focus = focus_map_stack[z - 1].at<float>(y, x);
             dm = z - 1;
@@ -195,18 +192,17 @@ void image_stack::create_depth_map()
     //Clear out the focus map stack as the data is no longer needed
     focus_map_stack.clear();
 
-    bilateralFilter(depth_map_float.clone(), depth_map_float, 10, 150, 150);
-
-
     depth_map_float.convertTo(depth_map, CV_8U);
     depth_map_float = depth_map_float / (size - 1);
+    depth_map_float.convertTo(depth_map_quantized, CV_8U, quantization - 1);
+    medianBlur(depth_map_quantized, depth_map_quantized, 81);
+
     cv::resize(depth_map_float, dst, Size(scaled_width, scaled_height));
     namedWindow("depth map guassian");
     imshow("depth map guassian", dst);
 
-    depth_map_float.convertTo(depth_map_quantized, CV_8U, quantization - 1);
     namedWindow("depth map quantization");
-    cv::resize(depth_map_quantized, dst, Size(scaled_width, scaled_height));
+    cv::resize(depth_map_quantized, dst, Size(scaled_width, scaled_height), 255 / (quantization - 1) );
     imshow("depth map quantization", dst);
 
     cout << "Saving depth map to file" << endl;

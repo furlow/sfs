@@ -73,6 +73,8 @@ cdef class Pyimage_stack:
 				self.size = json.load(infile)
 				self.thisptr.load(self.size)
 		else:
+			if not os.path.exists(self.img_dir + output):
+				os.mkdir(self.img_dir + output)
 			files = [file for file in os.listdir(self.img_dir) if file.endswith('.JPG')]
 			self.size = len(files)
 			with open(self.img_dir + output + 'attribtues.txt', 'w') as outfile:
@@ -82,9 +84,6 @@ cdef class Pyimage_stack:
 		and not os.path.exists(self.img_dir + tmp_cropped) \
 		and align_toggle == ALIGN_ON:
 			self.align_images()
-
-		if not os.path.exists(self.img_dir + output):
-			os.mkdir(self.img_dir + output)
 
 		self.thisptr = new image_stack(self.img_dir,
 										threshold,
