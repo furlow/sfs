@@ -31,14 +31,15 @@ cdef extern from "depth_map_methods.h":
 	cdef cppclass image_stack:
 		image_stack(char*, int, int, int, int, int) except +
 		void load(int)
+		void allocate(char*, char*, char*, int, int)
+		void resize()
 		void add(char*)
 		void create_depth_map()
 		void fuse_focus()
 		void setDefocus(int)
 		void refocus(int, int)
 		void refocus_multiple(int, int)
-		void resize(int, int)
-		void allocate(char*, char*, char*, int, int)
+
 
 #Python image class definition
 cdef class Pyimage_stack:
@@ -167,6 +168,7 @@ cdef class Pyimage_stack:
 		self.thisptr.resize(self.scaled_width, self.scaled_height)
 
 	def allocate(self):
+		print "Re allocating scaled images"
 		cdef np.ndarray[char, ndim=2, mode="c"] depth_map_local
 		cdef np.ndarray[char, ndim=3, mode="c"] focused_local
 		cdef np.ndarray[char, ndim=3, mode="c"] refocused_local

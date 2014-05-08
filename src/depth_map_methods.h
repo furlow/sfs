@@ -65,6 +65,9 @@ public:
     //This function is used to add an image to the stack
     void add(char* image_path);
 
+    //Function to set resize parameters for output display size
+    void resize();
+
     //Function for generating a depth map from a focus stack processed with a focus measure
     void create_depth_map();
 
@@ -101,9 +104,6 @@ public:
     // This function focuses the image at different points providing unrealistic
     // multiple focus points that would not be possible with real cameras
     void refocus_multiple(int focus_depth_1, int focus_depth_2);
-
-    //Function to set resize parameters for output display size
-    void resize(int in_scaled_width, int in_scaled_height);
 
     //Function used to apply boxfilter blur to a single pixel
     inline void boxfilter_single_pixel(int y, int x, int ksize);

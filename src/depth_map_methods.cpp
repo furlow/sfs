@@ -47,11 +47,22 @@ void image_stack::allocate(char* numpy_depth_map,
                             int in_scaled_width,
                             int in_scaled_height)
 {
+    cout << "C++ Reallocate images" << endl;
     scaled_height = in_scaled_height;
     scaled_width = in_scaled_width;
     depth_map_scaled = Mat( scaled_height, scaled_width, CV_8U, numpy_depth_map);
     focused_scaled = Mat( scaled_height, scaled_width, CV_8UC3, numpy_focused);
     refocused = Mat( scaled_height, scaled_width, CV_8UC3, numpy_refocused);
+}
+
+void image_stack::resize()
+{
+    cout << "C++ Resize images" << endl;
+    cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
+    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
+    generate_blurred_images();
+    refocus(depth_of_feild, focus_depth);
+    //cv::resize(refocused, refocused, Size(scaled_width, scaled_height));
 }
 
 //This function is used to add an image to the stack
@@ -425,13 +436,4 @@ Mat sum_modified_laplacian::operator()(Mat& image)
 
     boxFilter(ML, SML, -1, Size(2*step+1,2*step+1), Point(-1,-1), false);
     return SML;
-}
-
-void image_stack::resize(int in_scaled_width, int in_scaled_height)
-{
-    cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
-    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
-    generate_blurred_images();
-    refocus(depth_of_feild, focus_depth);
-    cv::resize(refocused, refocused, Size(scaled_width, scaled_height));
 }
