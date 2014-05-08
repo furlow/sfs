@@ -60,9 +60,9 @@ class refocusImage(QLabel):
                     self.stack.refocus_multiple(self.point1.y(), self.point1.x(), self.point2.y(), self.point2.x())
                 elif self.mode.find("Between Point Focus") == 0:
                     print "Between Point Focus"
-                    depth, depth_of_feild = self.stack.refocus_between_points(self.point1.y(), self.point1.x(), self.point2.y(), self.point2.x())
+                    depth, depth_of_field = self.stack.refocus_between_points(self.point1.y(), self.point1.x(), self.point2.y(), self.point2.x())
                     self.focusChanged.emit(depth)
-                    self.dofChanged.emit(depth_of_feild)
+                    self.dofChanged.emit(depth_of_field)
                 self.updateImage()
 
     def valueRefocus(self, depth):
@@ -70,9 +70,9 @@ class refocusImage(QLabel):
         self.stack.refocus(depth)
         self.updateImage()
 
-    def setDof(self, depth_of_feild):
-        print "setDof, dof: ", depth_of_feild
-        self.stack.setDof(depth_of_feild)
+    def setDof(self, depth_of_field):
+        print "setDof, dof: ", depth_of_field
+        self.stack.setDof(depth_of_field)
         self.updateImage()
 
     def setDefocus(self, defocus):
@@ -112,9 +112,9 @@ class Program(QDialog):
         self.focusSlider = QSlider(Qt.Horizontal)
         self.dofSlider = QSlider(Qt.Horizontal)
         self.defocusSlider = QSlider(Qt.Horizontal)
-        self.focusSlider.setMaximum(self.stack.size)
+        self.focusSlider.setMaximum(self.stack.size - 1)
         self.focusSlider.setMinimum(0)
-        self.dofSlider.setMaximum(self.stack.size)
+        self.dofSlider.setMaximum(self.stack.size - 1)
         self.dofSlider.setMinimum(0)
         self.defocusSlider.setMaximum(5)
         self.defocusSlider.setMinimum(1)

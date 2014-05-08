@@ -90,13 +90,13 @@ public:
     void generate_blurred_images();
 
     //Generates a defocus map used to refocus an image
-    Mat generate_defocus_map(int in_focus_depth, int in_depth_of_feild);
+    Mat generate_defocus_map(int in_focus_depth, int in_depth_of_field);
 
     //This function allows the defocus amount to be set
     void setDefocus(int in_defocus);
 
     //Function for artificially refocusing an image
-    void refocus(int in_depth_of_feild, int in_focus_depth);
+    void refocus(int in_depth_of_field, int in_focus_depth);
 
     //Refocus an image by suppling a defocus map
     void refocus(Mat& defocus_map);
@@ -117,7 +117,7 @@ private:
     int scaled_height;
     int rows_double;
     int cols_double;
-    int depth_of_feild;
+    int depth_of_field;
     int focus_depth;
     int defocus;
     float threshold;

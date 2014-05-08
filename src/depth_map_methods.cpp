@@ -21,7 +21,9 @@ image_stack::image_stack(char* img_dir,
                         defocus(1),
                         img_dir(img_dir),
                         scaled_width(scaled_width),
-                        scaled_height(scaled_height){
+                        scaled_height(scaled_height),
+                        depth_of_field(0),
+                        focus_depth(0){
 
                             cout << "Threshold: " << threshold << endl;
                         }
@@ -61,7 +63,8 @@ void image_stack::resize()
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
     cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
     generate_blurred_images();
-    refocus(depth_of_feild, focus_depth);
+    cout << "Depth of field: " << depth_of_field << ", focus depth: " << focus_depth << endl;
+    refocus(depth_of_field, focus_depth);
     //cv::resize(refocused, refocused, Size(scaled_width, scaled_height));
 }
 
@@ -267,12 +270,13 @@ void image_stack::setDefocus(int in_defocus){
 //Function which blurs the infocus image from 0 blur to the max blur required
 void image_stack::generate_blurred_images()
 {
-
 	clock_t init, final;
     init=clock();
     blurred.clear();
 
-    for(int z = 0; z < size -1; z++){
+    cerr << "defocus: " << defocus << endl;
+
+    for(int z = 0; z < size; z++){
     	GaussianBlur(focused_scaled, dst, Size(z * defocus * 2 + 1, z * defocus* 2 + 1), 0, 0);
     	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
     	blurred.push_back(dst.clone());
@@ -283,9 +287,9 @@ void image_stack::generate_blurred_images()
 }
 
 //Generates a defocus map used to refocus an image
-Mat image_stack::generate_defocus_map(int in_focus_depth, int in_depth_of_feild){
+Mat image_stack::generate_defocus_map(int in_focus_depth, int in_depth_of_field){
     Mat defocus_map = abs(depth_map_scaled - in_focus_depth);
-    defocus_map = defocus_map - in_depth_of_feild;
+    defocus_map = defocus_map - in_depth_of_field;
     cv::threshold( defocus_map, defocus_map, 0.0, 0.0, THRESH_TOZERO );
     return defocus_map;
 }
@@ -293,28 +297,33 @@ Mat image_stack::generate_defocus_map(int in_focus_depth, int in_depth_of_feild)
 //Function used to artificially refocus an image
 void image_stack::refocus(int in_depth_of_field, int in_focus_depth)
 {
-    depth_of_feild = in_depth_of_field;
+    depth_of_field = in_depth_of_field;
     focus_depth = in_focus_depth;
 
-    Mat defocus_map = generate_defocus_map(in_focus_depth, in_depth_of_field);
+
+    Mat defocus_map = generate_defocus_map(focus_depth, depth_of_field);
+    cout << "error1" << endl;
     refocus(defocus_map);
+    cout << "error2" << endl;
 }
 
 //Function used to artificially refocus an image
 void image_stack::refocus(Mat& defocus_map)
 {
+    cout << "Begin refocus" << endl;
+    cout << "scaled width: " << scaled_width << endl;
+    cout << "scaled height: " << scaled_height << endl;
 
-    Vec3b* blurred_stack_y_ptr[size - 1];
+    Vec3b* blurred_stack_y_ptr[size];
 
     //For loop which selects the correct pixels based on the depth map value
     for(int y = 0; y < scaled_height; y++)
     {
-
         Vec3b* refocused_y_ptr = refocused.ptr<Vec3b>(y);
         char* defocus_map_y_ptr = defocus_map.ptr<char>(y);
 
 
-        for(int i = 0; i < size - 1; i++)
+        for(int i = 0; i < size; i++)
         {
             blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
         }
@@ -326,6 +335,8 @@ void image_stack::refocus(Mat& defocus_map)
             refocused_y_ptr[x] = blurred_stack_y_ptr[defocus_map_y_ptr[x]][x];
         }
     }
+
+    cout << "End refocus" << endl;
 }
 
 // This function focuses the image at different points providing unrealistic
