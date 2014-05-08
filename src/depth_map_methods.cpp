@@ -176,39 +176,40 @@ inline float image_stack::depth_mean(float Fm,
 //Function for generating a depth map
 void image_stack::create_depth_map()
 {
-    Mat depth_map_float(height, width, CV_32F);
+    Mat depth_map_coarse(height, width, CV_32F);
+    Mat depth_map_gaussian(height, width, CV_32F);
 
     for(int row = 0; row < height; row++)
     {
-
-        float* row_ptr = depth_map_float.ptr<float>(row);
+        float* row_ptr_coarse = depth_map_coarse.ptr<float>(row);
+        float* row_ptr_gauss = depth_map_gaussian.ptr<float>(row);
 
         for(int col = 0; col < width; col++)
         {
-            row_ptr[col] = gaussian_depth_esstimation(row, col);
+            row_ptr_coarse[col] = coarse_depth_esstimation(row, col);
+            row_ptr_gauss[col] = gaussian_depth_esstimation(row, col);
         }
     }
 
     //Clear out the focus map stack as the data is no longer needed
     focus_map_stack.clear();
 
-    depth_map_float.convertTo(depth_map, CV_8U);
-    depth_map_float = depth_map_float / (size - 1);
-    depth_map_float.convertTo(depth_map_quantized, CV_8U, quantization - 1);
-    medianBlur(depth_map_quantized, depth_map_quantized, 81);
-
-    cv::resize(depth_map_float, dst, Size(scaled_width, scaled_height));
-    namedWindow("depth map guassian");
-    imshow("depth map guassian", dst);
-
-    namedWindow("depth map quantization");
-    cv::resize(depth_map_quantized, dst, Size(scaled_width, scaled_height), 255 / (quantization - 1) );
-    imshow("depth map quantization", dst);
-
     cout << "Saving depth map to file" << endl;
+    //Scale and save the gaussian the depth map
+    depth_map_gaussian = (depth_map_gaussian * 255) / (size - 1);
+    depth_map_gaussian.convertTo(depth_map_gaussian, CV_8U);
+    imwrite( img_dir + "output/" + "gaussian_depth_map.png", depth_map_gaussian);
+
+    //Save a raw version of the coarse depth map
+    depth_map_coarse.convertTo(depth_map, CV_8U);
     imwrite( img_dir + "output/" + "depth_map.png", depth_map);
-    //cluster();
-    cv::resize(depth_map_quantized, depth_map_scaled, Size(scaled_width, scaled_height));
+
+    //Scale and save the coarse the depth map
+    depth_map_coarse = (depth_map_coarse * 255) / (size - 1);
+    depth_map_coarse.convertTo(depth_map_coarse, CV_8U);
+    imwrite( img_dir + "output/" + "coarse_depth_map.png", depth_map_coarse);
+
+    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
 }
 
 void image_stack::fuse_focus()
@@ -260,7 +261,7 @@ void image_stack::generate_blurred_images()
     init=clock();
     blurred.clear();
 
-    for(int z = 0; z < quantization; z++){
+    for(int z = 0; z < size -1; z++){
     	GaussianBlur(focused_scaled, dst, Size(z * defocus * 2 + 1, z * defocus* 2 + 1), 0, 0);
     	//boxFilter(focused, dst, -1, Size(z * 6 + 1, z * 6 + 1));
     	blurred.push_back(dst.clone());
@@ -292,7 +293,7 @@ void image_stack::refocus(int in_depth_of_field, int in_focus_depth)
 void image_stack::refocus(Mat& defocus_map)
 {
 
-    Vec3b* blurred_stack_y_ptr[quantization];
+    Vec3b* blurred_stack_y_ptr[size - 1];
 
     //For loop which selects the correct pixels based on the depth map value
     for(int y = 0; y < scaled_height; y++)
@@ -302,7 +303,7 @@ void image_stack::refocus(Mat& defocus_map)
         char* defocus_map_y_ptr = defocus_map.ptr<char>(y);
 
 
-        for(int i = 0; i < quantization; i++)
+        for(int i = 0; i < size - 1; i++)
         {
             blurred_stack_y_ptr[i] = blurred[i].ptr<Vec3b>(y);
         }
@@ -429,7 +430,7 @@ Mat sum_modified_laplacian::operator()(Mat& image)
 void image_stack::resize(int in_scaled_width, int in_scaled_height)
 {
     cv::resize(focused, focused_scaled, Size(scaled_width, scaled_height));
-    cv::resize(depth_map_quantized, depth_map_scaled, Size(scaled_width, scaled_height));
+    cv::resize(depth_map, depth_map_scaled, Size(scaled_width, scaled_height));
     generate_blurred_images();
     refocus(depth_of_feild, focus_depth);
     cv::resize(refocused, refocused, Size(scaled_width, scaled_height));

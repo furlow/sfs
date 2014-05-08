@@ -4,6 +4,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from depth_map_methods_py import Pyimage_stack
 import matplotlib.pylab as plt
+import cv2
 import numpy2qimage
 
 RELOAD = 1
@@ -28,7 +29,7 @@ class refocusImage(QLabel):
         self.point2 = 0
 
         #Set up the image pixmap
-        self.setMinimumSize(600, 400)
+        self.setMinimumSize(1200, 800)
         self.setScaledContents(False)
         self.focused_pixmap = numpy2qpixmap(self.stack.focused_image)
 
@@ -124,6 +125,11 @@ class Program(QDialog):
         self.mode.addItem("Double Point Focus")
         self.mode.addItem("Between Point Focus")
 
+        #Create button for saving an image & connect to save function
+        self.save_refocused_button = QPushButton("Save Refocused Image")
+        self.save_focused_button = QPushButton("Save Focused Image")
+        self.save_depthmap_button = QPushButton("Save Depth Map")
+
         #Align the widgets in their containers
         options_layout = QVBoxLayout()
         options_layout.addWidget(self.mode)
@@ -133,6 +139,10 @@ class Program(QDialog):
         options_layout.addWidget(self.dofSlider)
         options_layout.addWidget(defocus_label)
         options_layout.addWidget(self.defocusSlider)
+        options_layout.addWidget(self.save_focused_button)
+        options_layout.addWidget(self.save_refocused_button)
+        options_layout.addWidget(self.save_depthmap_button)
+
 
         #Create a refocused_image
         self.refocusImage = refocusImage(stack);
@@ -150,6 +160,29 @@ class Program(QDialog):
         self.refocusImage.dofChanged.connect(self.dofSlider.setValue)
         self.defocusSlider.sliderMoved.connect(self.refocusImage.setDefocus)
         self.mode.currentIndexChanged[str].connect(self.refocusImage.setRefocusMode)
+
+        #connect to functions for saving
+        self.save_refocused_button.clicked.connect(self.saveRefocused)
+        self.save_depthmap_button.clicked.connect(self.saveDepthMap)
+        self.save_focused_button.clicked.connect(self.saveFocused)
+
+
+    def saveRefocused(self):
+        filename, _ = QFileDialog.getSaveFileName(self,
+        "Save Image", "/Users/josh/", "Image Files (*.png *.jpg *.bmp)")
+        cv2.imwrite(filename, cv2.cvtColor(self.stack.refocused_image, cv2.cv.CV_BGR2RGB))
+
+    def saveDepthMap(self):
+        filename, _ = QFileDialog.getSaveFileName(self,
+        "Save Image", "/Users/josh/Documents/", "Image Files (*.png *.jpg *.bmp)")
+        cv2.imwrite(filename, cv2.cvtColor(self.stack.depth_map, cv2.cv.CV_BGR2RGB))
+
+    def saveFocused(self):
+        filename, _ = QFileDialog.getSaveFileName(self,
+        "Save Image", "/Users/josh/", "Image Files (*.png *.jpg *.bmp)")
+        cv2.imwrite(filename, cv2.cvtColor(self.stack.focused_image, cv2.cv.CV_BGR2RGB))
+
+
 
 #Convert numpy to pixmap image TODO move to library
 def numpy2qpixmap(numpyImg):
