@@ -165,7 +165,7 @@ cdef class Pyimage_stack:
 		self.scaled_height = in_scaled_height
 		self.scaled_width = in_scaled_width
 		self.allocate()
-		self.thisptr.resize(self.scaled_width, self.scaled_height)
+		self.thisptr.resize()
 
 	def allocate(self):
 		print "Re allocating scaled images"
